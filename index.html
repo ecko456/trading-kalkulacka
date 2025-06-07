@@ -47,8 +47,39 @@
         h1 {
             color: var(--text-color);
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             font-weight: 600;
+        }
+        
+        #market-status-bar {
+            background-color: var(--form-bg-color);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.5s ease, border-color 0.5s ease;
+        }
+        #market-status-bar .timer {
+            font-weight: 700;
+            font-size: 1.3em;
+            color: white;
+            margin-left: 10px;
+            letter-spacing: 2px;
+        }
+        .status-open {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-color: var(--success-color);
+        }
+        .status-closed {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-color: var(--danger-color);
+        }
+        .status-pre-market {
+            background-color: rgba(62, 133, 247, 0.2);
+            border-color: var(--primary-color);
         }
 
         .grid-container {
@@ -254,6 +285,12 @@
 <body>
     <div class="container">
         <h1>Trading Dashboard</h1>
+
+        <div id="market-status-bar">
+            <span id="market-status-text">Načítám status trhu...</span>
+            <span id="countdown-timer" class="timer"></span>
+        </div>
+
         <div class="grid-container">
             <div class="card">
                 <form id="calculator-form">
@@ -318,51 +355,18 @@
                     </div>
                 </div>
                 <div class="widget-card">
-                    <h3>Síla Trhu (NYSE A/D Linie)</h3>
+                    <h3>Tržní zprávy</h3>
                     <div class="tradingview-widget-container">
                         <div class="tradingview-widget-container__widget"></div>
-                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
                         {
-                          "symbols": [
-                            [
-                              "S&P 500",
-                              "SP:SPX|1D"
-                            ],
-                            [
-                              "NYSE A/D Line",
-                              "USI:ADD|1D"
-                            ]
-                          ],
-                          "chartOnly": false,
-                          "width": "100%",
-                          "height": "100%",
-                          "locale": "cs",
-                          "colorTheme": "dark",
-                          "autosize": true,
-                          "showVolume": false,
-                          "showMA": false,
-                          "hideDateRanges": false,
-                          "hideMarketStatus": false,
-                          "hideSymbolLogo": false,
-                          "scalePosition": "right",
-                          "scaleMode": "Normal",
-                          "fontFamily": "Inter, sans-serif",
-                          "fontSize": "10",
-                          "noTimeScale": false,
-                          "valuesTracking": "1",
-                          "changeMode": "price-and-percent",
-                          "chartType": "area",
-                          "maLineColor": "#2962FF",
-                          "maLineWidth": 1,
-                          "maLength": 9,
-                          "backgroundColor": "rgba(0, 0, 0, 0)",
-                          "lineWidth": 2,
-                          "lineType": 0,
-                          "dateRanges": [
-                            "3m",
-                            "6m",
-                            "1y"
-                          ]
+                            "feedMode": "all_symbols",
+                            "colorTheme": "dark",
+                            "isTransparent": true,
+                            "displayMode": "regular",
+                            "width": "100%",
+                            "height": "100%",
+                            "locale": "cs_CZ"
                         }
                         </script>
                     </div>
@@ -385,8 +389,8 @@
         function updateRrrDisplay(element, rrr, isOptional = false) { if (isOptional && rrr <= 0) { element.innerHTML = '_'; element.className = 'result-value-small'; return; } element.innerHTML = `<span class="rrr-indicator">${rrr.toFixed(2)} : 1</span>`; const indicator = element.querySelector('.rrr-indicator'); if (rrr >= 2) indicator.style.backgroundColor = 'var(--success-color)'; else if (rrr >= 1) indicator.style.backgroundColor = 'var(--warning-color)'; else indicator.style.backgroundColor = 'var(--danger-color)'; }
         function updateCommission() { const platform = inputs.platform.value; const instrument = inputs.instrument.value; inputs.commission.disabled = (platform !== 'manual'); if (platform !== 'manual') { inputs.commission.value = commissionPresets[platform]?.[instrument] || 0; } calculateAndDisplay(); }
         function resetOutputs() { outputs.maxContracts.textContent = '_'; outputs.terpc.textContent = '_'; outputs.totalCalculatedRisk.textContent = '_'; outputs.rrrTp1.textContent = '_'; outputs.rrrTp1.className = 'result-value-small'; outputs.rrrTp2.textContent = '_'; outputs.rrrTp2.className = 'result-value-small'; outputs.warningText.textContent = ''; outputs.rrrBarRisk.style.width = '50%'; outputs.rrrBarReward.style.width = '50%'; }
-        function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v5', JSON.stringify(values)); }
-        function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v5'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
+        function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v6', JSON.stringify(values)); }
+        function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v6'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
         
         // =================================================================================
         // WIDGET PRO SVÁTKY
@@ -398,163 +402,22 @@
         // DYNAMICKÝ GRAF VOLATILITY
         // =================================================================================
         let seasonalityChart = null; 
-        
-        async function updateChartWithLiveData() {
-            const canvas = document.getElementById('seasonalityChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            if (seasonalityChart) {
-                seasonalityChart.destroy();
-            }
+        async function updateChartWithLiveData() { const canvas = document.getElementById('seasonalityChart'); if (!canvas) return; const ctx = canvas.getContext('2d'); if (seasonalityChart) { seasonalityChart.destroy(); } ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.font = "16px Inter"; ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.textAlign = "center"; ctx.fillText("Načítám aktuální data VIX...", canvas.width / 2, canvas.height / 2); try { const response = await fetch('./vix_data.json'); if (!response.ok) { throw new Error(`Soubor vix_data.json nenalezen (stav: ${response.status})`); } const actualVixData = await response.json(); const processedData = processVixData(actualVixData); drawVixChart(processedData.modelData, processedData.actualData); } catch (error) { console.error("Chyba při načítání aktuálních dat VIX:", error); const processedData = processVixData([]); drawVixChart(processedData.modelData, null); const canvasCtx = canvas.getContext('2d'); canvasCtx.font = "14px Inter"; canvasCtx.fillStyle = "rgba(253, 126, 20, 0.8)"; canvasCtx.textAlign = "center"; canvasCtx.fillText("Aktuální data nejsou k dispozici.", canvas.width / 2, canvas.height / 2 + 30); } }
+        function processVixData(liveData) { const fiveYearMonthlyAverages = [22.8, 22.1, 22.5, 19.4, 19.6, 19.9, 18.2, 18.6, 20.9, 21.5, 20.2, 19.5]; const today = new Date(); const modelData = []; const actualData = []; const liveDataMap = new Map(liveData.map(item => [item.date, item.price])); for (let i = -7; i <= 14; i++) { const targetDate = new Date(); targetDate.setHours(12, 0, 0, 0); targetDate.setDate(today.getDate() + i); const targetDateString = targetDate.toISOString().split('T')[0]; const monthIndex = targetDate.getMonth(); modelData.push({ x: targetDate.getTime(), y: fiveYearMonthlyAverages[monthIndex] }); if (liveDataMap.has(targetDateString)) { actualData.push({ x: targetDate.getTime(), y: liveDataMap.get(targetDateString) }); } } return { modelData, actualData }; }
+        function drawVixChart(modelDataset, actualDataset) { const datasets = [{ label: '5letý měsíční průměr', data: modelDataset, borderColor: 'rgba(62, 133, 247, 0.6)', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [5, 5], }]; if (actualDataset && actualDataset.length > 0) { datasets.push({ label: 'Aktuální VIX (realita)', data: actualDataset, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 1)', borderWidth: 2.5, pointRadius: 0, tension: 0.4, fill: 'origin', }); } const todayLinePlugin = { id: 'todayLine', afterDraw: (chart) => { const ctx = chart.ctx; const xAxis = chart.scales.x; const yAxis = chart.scales.y; const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0)); if (todayX >= xAxis.left && todayX <= xAxis.right) { ctx.save(); ctx.beginPath(); ctx.moveTo(todayX, yAxis.top); ctx.lineTo(todayX, yAxis.bottom); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.fillText('Dnes', todayX, yAxis.top + 15); ctx.restore(); } } }; const ctx = document.getElementById('seasonalityChart').getContext('2d'); if (seasonalityChart) { seasonalityChart.destroy(); } seasonalityChart = new Chart(ctx, { type: 'line', data: { datasets: datasets }, plugins: [todayLinePlugin], options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: "'Inter', sans-serif" }} } }, scales: { x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'd. MMM' } }, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a9b1bb' } }, y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#a9b1bb' } } } } }); }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.font = "16px Inter";
-            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-            ctx.textAlign = "center";
-            ctx.fillText("Načítám aktuální data VIX...", canvas.width / 2, canvas.height / 2);
-            
-            try {
-                const response = await fetch('./vix_data.json'); 
-                if (!response.ok) {
-                    throw new Error(`Soubor vix_data.json nenalezen (stav: ${response.status})`);
-                }
-                const actualVixData = await response.json();
-                
-                const processedData = processVixData(actualVixData);
-                drawVixChart(processedData.modelData, processedData.actualData);
+        // =================================================================================
+        // ČASOMÍRA NYSE
+        // =================================================================================
+        function updateMarketCountdown() { const statusBar = document.getElementById('market-status-bar'); const statusText = document.getElementById('market-status-text'); const timerText = document.getElementById('countdown-timer'); const timeZone = 'America/New_York'; const now = new Date(); const nyTime = new Date(now.toLocaleString('en-US', { timeZone })); const nyDay = nyTime.getDay(); const openTime = new Date(nyTime.getFullYear(), nyTime.getMonth(), nyTime.getDate(), 9, 30, 0); const closeTime = new Date(nyTime.getFullYear(), nyTime.getMonth(), nyTime.getDate(), 16, 0, 0); if (nyDay === 0 || nyDay === 6) { statusText.textContent = 'NY Trh je zavřený (víkend)'; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } const nyDateString = nyTime.toISOString().split('T')[0]; const isHoliday = bankHolidays.some(holiday => holiday.date === nyDateString); if (isHoliday) { statusText.textContent = `NY Trh je zavřený (svátek)`; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } let diff, hours, minutes, seconds; if (nyTime < openTime) { statusText.textContent = 'NY Seance otevírá za:'; statusBar.className = 'status-pre-market'; diff = openTime - nyTime; } else if (nyTime >= openTime && nyTime < closeTime) { statusText.textContent = 'NY Seance zavírá za:'; statusBar.className = 'status-open'; diff = closeTime - nyTime; } else { statusText.textContent = 'NY Trh je pro dnešek zavřený'; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } hours = Math.floor((diff / (1000 * 60 * 60)) % 24); minutes = Math.floor((diff / 1000 / 60) % 60); seconds = Math.floor((diff / 1000) % 60); timerText.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; }
 
-            } catch (error) {
-                console.error("Chyba při načítání aktuálních dat VIX:", error);
-                const processedData = processVixData([]);
-                drawVixChart(processedData.modelData, null); 
-                
-                const canvasCtx = canvas.getContext('2d');
-                canvasCtx.font = "14px Inter";
-                canvasCtx.fillStyle = "rgba(253, 126, 20, 0.8)";
-                canvasCtx.textAlign = "center";
-                canvasCtx.fillText("Aktuální data nejsou k dispozici.", canvas.width / 2, canvas.height / 2 + 30);
-            }
-        }
-
-        function processVixData(liveData) {
-            const fiveYearMonthlyAverages = [22.8, 22.1, 22.5, 19.4, 19.6, 19.9, 18.2, 18.6, 20.9, 21.5, 20.2, 19.5];
-            const today = new Date();
-            const modelData = [];
-            const actualData = [];
-            const liveDataMap = new Map(liveData.map(item => [item.date, item.price]));
-
-            for (let i = -7; i <= 14; i++) {
-                const targetDate = new Date();
-                targetDate.setHours(12, 0, 0, 0);
-                targetDate.setDate(today.getDate() + i);
-                const targetDateString = targetDate.toISOString().split('T')[0];
-                
-                const monthIndex = targetDate.getMonth();
-                modelData.push({ x: targetDate.getTime(), y: fiveYearMonthlyAverages[monthIndex] });
-                
-                if (liveDataMap.has(targetDateString)) {
-                    actualData.push({ x: targetDate.getTime(), y: liveDataMap.get(targetDateString) });
-                }
-            }
-            return { modelData, actualData };
-        }
-
-        function drawVixChart(modelDataset, actualDataset) {
-            const datasets = [{
-                label: '5letý měsíční průměr',
-                data: modelDataset,
-                borderColor: 'rgba(62, 133, 247, 0.6)',
-                borderWidth: 2,
-                pointRadius: 0,
-                tension: 0.4,
-                borderDash: [5, 5],
-            }];
-            if (actualDataset && actualDataset.length > 0) {
-                datasets.push({
-                    label: 'Aktuální VIX (realita)',
-                    data: actualDataset,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    borderColor: 'rgba(255, 255, 255, 1)',
-                    borderWidth: 2.5,
-                    pointRadius: 0,
-                    tension: 0.4,
-                    fill: 'origin',
-                });
-            }
-            const todayLinePlugin = {
-                id: 'todayLine',
-                afterDraw: (chart) => {
-                    const ctx = chart.ctx;
-                    const xAxis = chart.scales.x;
-                    const yAxis = chart.scales.y;
-                    const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0));
-                    if (todayX >= xAxis.left && todayX <= xAxis.right) {
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.moveTo(todayX, yAxis.top);
-                        ctx.lineTo(todayX, yAxis.bottom);
-                        ctx.lineWidth = 2;
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.setLineDash([5, 5]);
-                        ctx.stroke();
-                        ctx.textAlign = 'center';
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                        ctx.fillText('Dnes', todayX, yAxis.top + 15);
-                        ctx.restore();
-                    }
-                }
-            };
-            
-            const ctx = document.getElementById('seasonalityChart').getContext('2d');
-            
-            seasonalityChart = new Chart(ctx, {
-                type: 'line',
-                data: { datasets: datasets },
-                plugins: [todayLinePlugin],
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { 
-                            display: true,
-                            position: 'bottom',
-                            labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: "'Inter', sans-serif" }}
-                        } 
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: { unit: 'day', displayFormats: { day: 'd. MMM' } },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#a9b1bb' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#a9b1bb' }
-                        }
-                    }
-                }
-            });
-        }
-        
         // =================================================================================
         // SPOUŠTĚNÍ A EVENT LISTENERY
         // =================================================================================
-        form.addEventListener('input', (event) => {
-            if (event.target.tagName !== 'SELECT') {
-                calculateAndDisplay();
-            }
-        });
-        
+        form.addEventListener('input', (event) => { if (event.target.tagName !== 'SELECT') { calculateAndDisplay(); } });
         inputs.platform.addEventListener('change', updateCommission);
         inputs.instrument.addEventListener('change', updateCommission);
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadFromLocalStorage();
-            displayUpcomingHolidays();
-            updateChartWithLiveData();
-        });
+        document.addEventListener('DOMContentLoaded', () => { loadFromLocalStorage(); displayUpcomingHolidays(); updateChartWithLiveData(); updateMarketCountdown(); setInterval(updateMarketCountdown, 1000); });
     </script>
 </body>
 </html>
