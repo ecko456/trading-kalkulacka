@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka obchodních pozic - Vlastní Graf</title>
+    <title>Kalkulačka obchodních pozic - Opraveno</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
     <style>
         :root {
@@ -290,9 +291,9 @@
 
             <div class="bottom-section">
                 <div class="widget-card">
-                    <h3>Historická Volatilita (VIX, 5 let, měsíčně)</h3>
+                    <h3>Model měsíční volatility (VIX)</h3>
                     <div style="flex-grow: 1; position: relative;">
-                        <canvas id="vixChart"></canvas>
+                        <canvas id="seasonalityChart"></canvas>
                     </div>
                 </div>
                 <div class="widget-card">
@@ -363,6 +364,7 @@
             rrrBarReward: document.getElementById('rrr-bar-reward'), warningText: document.getElementById('warning-text'),
             totalCalculatedRisk: document.getElementById('total-calculated-risk'), terpc: document.getElementById('terpc'),
         };
+
         function calculateAndDisplay() {
             const values = {};
             for (const key in inputs) {
@@ -396,6 +398,7 @@
             }
             updateRrrUI(rrr1, rrr2);
         }
+
         function updateRrrUI(rrr1, rrr2) {
             updateRrrDisplay(outputs.rrrTp1, rrr1);
             updateRrrDisplay(outputs.rrrTp2, rrr2, true);
@@ -405,6 +408,7 @@
             outputs.rrrBarReward.style.width = `${100 - riskPercent}%`;
             outputs.warningText.textContent = (rrr1 < 1 && rrr1 > 0) ? 'UPOZORNĚNÍ: Potenciální zisk je nižší než riziko!' : '';
         }
+
         function updateRrrDisplay(element, rrr, isOptional = false) {
             if (isOptional && rrr <= 0) {
                 element.innerHTML = '_';
@@ -417,6 +421,7 @@
             else if (rrr >= 1) indicator.style.backgroundColor = 'var(--warning-color)';
             else indicator.style.backgroundColor = 'var(--danger-color)';
         }
+
         function updateCommission() {
             const platform = inputs.platform.value;
             const instrument = inputs.instrument.value;
@@ -426,6 +431,7 @@
             }
             calculateAndDisplay();
         }
+
         function resetOutputs() {
             outputs.maxContracts.textContent = '_';
             outputs.terpc.textContent = '_';
@@ -438,11 +444,13 @@
             outputs.rrrBarRisk.style.width = '50%';
             outputs.rrrBarReward.style.width = '50%';
         }
+
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculator_customChart_v1', JSON.stringify(values));
+            localStorage.setItem('futuresCalculator_final_v2', JSON.stringify(values));
         }
+
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculator_customChart_v1');
+            const saved = localStorage.getItem('futuresCalculator_final_v2');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
@@ -476,49 +484,86 @@
             }).join('');
         }
 
-        function createVixChart() {
-             // Data: Měsíční uzavírací ceny VIX (zaokrouhleno) zhruba od půlky 2020 do půlky 2025
-            const vixLabels = ['Čen 20', 'Zář 20', 'Pro 20', 'Bře 21', 'Čen 21', 'Zář 21', 'Pro 21', 'Bře 22', 'Čen 22', 'Zář 22', 'Pro 22', 'Bře 23', 'Čen 23', 'Zář 23', 'Pro 23', 'Bře 24', 'Čen 24', 'Zář 24', 'Pro 24', 'Bře 25', 'Čen 25'];
-            const vixData = [28.6, 26.4, 22.8, 19.4, 15.8, 23.1, 17.2, 20.6, 28.7, 31.6, 21.1, 19.9, 14.5, 17.5, 12.5, 13.0, 12.9, 14, 14, 13, 13];
+        function createSeasonalityChart() {
+            const monthlyVolatilityProfile = [
+                15, 14.5, 14, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 20, 
+                21, 22, 22.5, 21.5, 20, 19, 18, 17.5, 17, 16.5, 16, 15.5, 15, 15, 14.5, 14
+            ];
 
-            const ctx = document.getElementById('vixChart').getContext('2d');
+            const today = new Date();
+            const dayOfMonth = today.getDate();
+
+            const displayData = [];
+            const displayLabels = [];
+
+            for (let i = -7; i <= 14; i++) {
+                const targetDate = new Date();
+                targetDate.setDate(today.getDate() + i);
+                
+                let dayIndex = targetDate.getDate() - 1;
+                if (dayIndex < 0) dayIndex = 0;
+                if (dayIndex > 30) dayIndex = 30;
+
+                displayLabels.push(targetDate);
+                displayData.push(monthlyVolatilityProfile[dayIndex]);
+            }
+
+            const todayLinePlugin = {
+                id: 'todayLine',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const xAxis = chart.scales.x;
+                    const yAxis = chart.scales.y;
+                    const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0));
+
+                    if (todayX >= xAxis.left && todayX <= xAxis.right) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(todayX, yAxis.top);
+                        ctx.lineTo(todayX, yAxis.bottom);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.fillText('Dnes', todayX, yAxis.top + 15);
+                        ctx.restore();
+                    }
+                }
+            };
             
+            const ctx = document.getElementById('seasonalityChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: vixLabels,
+                    labels: displayLabels,
                     datasets: [{
-                        label: 'Měsíční VIX',
-                        data: vixData,
+                        label: 'Model VIX',
+                        data: displayData,
                         backgroundColor: 'rgba(62, 133, 247, 0.2)',
                         borderColor: 'rgba(62, 133, 247, 1)',
                         borderWidth: 2,
-                        pointBackgroundColor: 'rgba(62, 133, 247, 1)',
-                        pointRadius: 3,
-                        tension: 0.3
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
+                plugins: [todayLinePlugin],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#000',
-                            titleFont: { size: 14 },
-                            bodyFont: { size: 12 },
-                            padding: 10,
-                            cornerRadius: 6
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        x: {
+                            type: 'time',
+                            time: { unit: 'day', displayFormats: { day: 'd. M.' } },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
                             ticks: { color: '#a9b1bb' }
                         },
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
                             ticks: { color: '#a9b1bb' }
                         }
                     }
@@ -526,12 +571,23 @@
             });
         }
 
-        form.addEventListener('input', calculateAndDisplay);
+        // === EVENT LISTENERS ===
+        // Reaguje na jakýkoli textový/číselný vstup
+        form.addEventListener('input', (event) => {
+            if (event.target.tagName !== 'SELECT') {
+                calculateAndDisplay();
+            }
+        });
 
+        // OPRAVA: Vrácené posluchače pro výběrová pole
+        inputs.platform.addEventListener('change', updateCommission);
+        inputs.instrument.addEventListener('change', updateCommission);
+
+        // Spuštění funkcí po načtení stránky
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             displayUpcomingHolidays();
-            createVixChart();
+            createSeasonalityChart();
         });
     </script>
 </body>
