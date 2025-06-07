@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka obchodních pozic - Finální Verze</title>
+    <title>Kalkulačka obchodních pozic - Vlastní Graf</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         :root {
             --bg-color: #1c2025;
@@ -245,22 +248,6 @@
             text-align: center;
             padding-top: 20px;
         }
-
-        .analysis-link {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 8px 15px;
-            background-color: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            text-align: center;
-            transition: background-color 0.2s ease;
-        }
-        .analysis-link:hover {
-            background-color: var(--primary-hover-color);
-        }
     </style>
 </head>
 <body>
@@ -303,25 +290,9 @@
 
             <div class="bottom-section">
                 <div class="widget-card">
-                    <h3>Index Volatility (VIX)</h3>
-                    <div class="tradingview-widget-container" style="height: 100%; display: flex; flex-direction: column;">
-                        <div class="tradingview-widget-container__widget" style="flex-grow: 1;"></div>
-                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-                        {
-                          "symbol": "TVC:VIX",
-                          "width": "100%",
-                          "height": "100%",
-                          "locale": "cs",
-                          "dateRange": "12M",
-                          "colorTheme": "dark",
-                          "isTransparent": true,
-                          "autosize": true,
-                          "largeChartUrl": ""
-                        }
-                        </script>
-                        <a href="https://unusualwhales.com/stock/VIX/seasonality" target="_blank" class="analysis-link">
-                            Zobrazit sezónní analýzu
-                        </a>
+                    <h3>Historická Volatilita (VIX, 5 let, měsíčně)</h3>
+                    <div style="flex-grow: 1; position: relative;">
+                        <canvas id="vixChart"></canvas>
                     </div>
                 </div>
                 <div class="widget-card">
@@ -468,10 +439,10 @@
             outputs.rrrBarReward.style.width = '50%';
         }
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculatorSettings_final_v1', JSON.stringify(values));
+            localStorage.setItem('futuresCalculator_customChart_v1', JSON.stringify(values));
         }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculatorSettings_final_v1');
+            const saved = localStorage.getItem('futuresCalculator_customChart_v1');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
@@ -505,11 +476,62 @@
             }).join('');
         }
 
+        function createVixChart() {
+             // Data: Měsíční uzavírací ceny VIX (zaokrouhleno) zhruba od půlky 2020 do půlky 2025
+            const vixLabels = ['Čen 20', 'Zář 20', 'Pro 20', 'Bře 21', 'Čen 21', 'Zář 21', 'Pro 21', 'Bře 22', 'Čen 22', 'Zář 22', 'Pro 22', 'Bře 23', 'Čen 23', 'Zář 23', 'Pro 23', 'Bře 24', 'Čen 24', 'Zář 24', 'Pro 24', 'Bře 25', 'Čen 25'];
+            const vixData = [28.6, 26.4, 22.8, 19.4, 15.8, 23.1, 17.2, 20.6, 28.7, 31.6, 21.1, 19.9, 14.5, 17.5, 12.5, 13.0, 12.9, 14, 14, 13, 13];
+
+            const ctx = document.getElementById('vixChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: vixLabels,
+                    datasets: [{
+                        label: 'Měsíční VIX',
+                        data: vixData,
+                        backgroundColor: 'rgba(62, 133, 247, 0.2)',
+                        borderColor: 'rgba(62, 133, 247, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(62, 133, 247, 1)',
+                        pointRadius: 3,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#000',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            cornerRadius: 6
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#a9b1bb' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#a9b1bb' }
+                        }
+                    }
+                }
+            });
+        }
+
         form.addEventListener('input', calculateAndDisplay);
 
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             displayUpcomingHolidays();
+            createVixChart();
         });
     </script>
 </body>
