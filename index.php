@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulačka Velikosti Pozice - Fibo Master Edice v4</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --form-bg-color: #2b2b2b;
+            --text-color: #e0e0e0;
+            --primary-color: #ffc107;
+            --input-bg-color: #3c3c3c;
+            --border-color: #555;
+            --success-color: #28a745;
+            --warning-color: #fd7e14;
+            --danger-color: #dc3545;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 1024px) {
+            .grid-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .card {
+            background-color: var(--form-bg-color);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        fieldset {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        legend {
+            color: var(--primary-color);
+            font-weight: bold;
+            padding: 0 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        input, select {
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+        .results-grid {
+            display: grid;
+            gap: 15px;
+        }
+        .result-item {
+            background-color: var(--input-bg-color);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .result-label {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+        .result-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .result-value-small {
+            font-size: 1.2em;
+        }
+        .rrr-indicator {
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .rrr-bar {
+            display: flex;
+            height: 25px;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: #555;
+            margin-top: 10px;
+        }
+        .rrr-risk { background-color: var(--danger-color); }
+        .rrr-reward { background-color: var(--success-color); }
+        #warning-text {
+            color: var(--danger-color);
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .news-widget-container iframe {
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kalkulačka Velikosti Pozice - Fibo Master Edice v4</h1>
+        <div class="grid-container">
+            <div class="card">
+                <form id="calculator-form">
+                    <fieldset>
+                        <legend>1. Definice Obchodu</legend>
+                        <div class="form-group">
+                            <label for="setup-name">Název Setupu / Strategie (volitelné)</label>
+                            <input type="text" id="setup-name" placeholder="Např. RTH Open F7, Break 4H F5...">
+                        </div>
+                        <div class="form-group">
+                            <label for="instrument">Instrument</label>
+                            <select id="instrument">
+                                <option value="ES">ES (E-mini S&P 500)</option>
+                                <option value="MES">MES (Micro E-mini S&P 500)</option>
+                                <option value="NQ">NQ (E-mini Nasdaq 100)</option>
+                                <option value="MNQ">MNQ (Micro E-mini Nasdaq 100)</option>
+                                <option value="GC">GC (Gold)</option>
+                                <option value="MGC">MGC (Micro Gold)</option>
+                                <option value="CL">CL (Crude Oil)</option>
+                                <option value="MCL">MCL (Micro Crude Oil)</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>2. Cenové Úrovně a Riziko</legend>
+                        <div class="form-group"><label for="entry-price">Vstupní Cena</label><input type="number" id="entry-price" step="0.01"></div>
+                        <div class="form-group"><label for="stop-loss-price">Stop-Loss Cena</label><input type="number" id="stop-loss-price" step="0.01"></div>
+                        <div class="form-group"><label for="tp1-price">Profit Target 1 Cena</label><input type="number" id="tp1-price" step="0.01"></div>
+                        <div class="form-group"><label for="tp2-price">Profit Target 2 Cena (volitelné)</label><input type="number" id="tp2-price" step="0.01"></div>
+                        <div class="form-group"><label for="total-risk">Celkové Požadované Riziko na Obchod ($)</label><input type="number" id="total-risk" value="100" step="1"></div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>3. Náklady a Buffery</legend>
+                        <div class="form-group"><label for="platform">Obchodní Platforma</label><select id="platform"><option value="manual">Manuální Vstup</option><option value="apex-rithmic">Apex - Rithmic</option><option value="apex-tradovate">Apex - Tradovate</option></select></div>
+                        <div class="form-group"><label for="commission">Komise za Kontrakt (RT) ($)</label><input type="number" id="commission" step="0.01"></div>
+                        <div class="form-group"><label for="sl-buffer">Stop-Loss Buffer (v ticích)</label><input type="number" id="sl-buffer" value="0" step="1"></div>
+                        <div class="form-group"><label for="slippage">Předpokládaný Slippage (v ticích)</label><input type="number" id="slippage" value="1" step="1"></div>
+                    </fieldset>
+                    
+                    <fieldset>
+                        <legend>4. Klíčové Zprávy (Red News)</legend>
+                        <div class="news-widget-container">
+                             <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone,timeselector,filters&countries=25,5,72,6,17,35,43,10&calType=day&timeZone=69&importance=3&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+            <div class="card">
+                <h2 style="text-align: center; color: var(--primary-color);">Výsledky</h2>
+                <div class="results-grid">
+                    <div class="result-item" style="grid-column: 1 / -1;">
+                        <div class="result-label">Maximální Počet Kontraktů</div>
+                        <div id="max-contracts" class="result-value">_</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">RRR (TP1)</div>
+                        <div id="rrr-tp1" class="result-value-small">_</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">RRR (TP2)</div>
+                        <div id="rrr-tp2" class="result-value-small">_</div>
+                    </div>
+                     <div class="result-item" style="grid-column: 1 / -1;">
+                        <div class="result-label">Vizuální Poměr Rizika a Zisku (TP1)</div>
+                        <div class="rrr-bar">
+                            <div id="rrr-bar-risk" class="rrr-risk"></div>
+                            <div id="rrr-bar-reward" class="rrr-reward"></div>
+                        </div>
+                        <div id="warning-text"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Celkové Kalkulované Riziko</div>
+                        <div id="total-calculated-risk" class="result-value-small">_</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Riziko na 1 Kontrakt (TERPC)</div>
+                        <div id="terpc" class="result-value-small">_</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const instrumentData = {
+            'ES':  { pointValue: 50.0, tickSize: 0.25 }, 'MES': { pointValue: 5.0,  tickSize: 0.25 },
+            'NQ':  { pointValue: 20.0, tickSize: 0.25 }, 'MNQ': { pointValue: 2.0,  tickSize: 0.25 },
+            'GC':  { pointValue: 100.0, tickSize: 0.10 },'MGC': { pointValue: 10.0, tickSize: 0.10 },
+            'CL':  { pointValue: 1000.0,tickSize: 0.01 },'MCL': { pointValue: 100.0, tickSize: 0.01 },
+        };
+        
+        const commissionPresets = {
+            'apex-rithmic': { 'ES': 5.88, 'NQ': 5.88, 'MES': 1.32, 'MNQ': 1.32, 'GC': 6.14, 'CL': 6.14, 'MGC': 2.44, 'MCL': 2.44 },
+            'apex-tradovate': { 'ES': 5.16, 'NQ': 5.16, 'MES': 1.16, 'MNQ': 1.16, 'GC': 5.16, 'CL': 5.16, 'MGC': 2.36, 'MCL': 2.36 }
+        };
+
+        const form = document.getElementById('calculator-form');
+        const inputs = {
+            setupName: document.getElementById('setup-name'), instrument: document.getElementById('instrument'),
+            entryPrice: document.getElementById('entry-price'), stopLossPrice: document.getElementById('stop-loss-price'),
+            tp1Price: document.getElementById('tp1-price'), tp2Price: document.getElementById('tp2-price'),
+            totalRisk: document.getElementById('total-risk'), platform: document.getElementById('platform'),
+            commission: document.getElementById('commission'), slBuffer: document.getElementById('sl-buffer'),
+            slippage: document.getElementById('slippage'),
+        };
+        const outputs = {
+            maxContracts: document.getElementById('max-contracts'), rrrTp1: document.getElementById('rrr-tp1'),
+            rrrTp2: document.getElementById('rrr-tp2'), rrrBarRisk: document.getElementById('rrr-bar-risk'),
+            rrrBarReward: document.getElementById('rrr-bar-reward'), warningText: document.getElementById('warning-text'),
+            totalCalculatedRisk: document.getElementById('total-calculated-risk'), terpc: document.getElementById('terpc'),
+        };
+
+        function calculateAndDisplay() {
+            const values = {};
+            for (const key in inputs) {
+                values[key] = (inputs[key].type === 'number') ? parseFloat(inputs[key].value) : inputs[key].value;
+            }
+
+            saveToLocalStorage(values);
+            resetOutputs();
+
+            if (isNaN(values.entryPrice) || isNaN(values.stopLossPrice) || values.totalRisk <= 0) {
+                return;
+            }
+
+            const instrumentInfo = instrumentData[values.instrument];
+            const tickValue = instrumentInfo.pointValue * instrumentInfo.tickSize;
+            const riskPoints = Math.abs(values.entryPrice - values.stopLossPrice);
+            const crpcRaw = (riskPoints / instrumentInfo.tickSize) * tickValue;
+            const bufferCost = values.slBuffer * tickValue;
+            const slippageCost = values.slippage * tickValue;
+            const terpc = crpcRaw + values.commission + bufferCost + slippageCost;
+            const maxContracts = (terpc > 0) ? Math.floor(values.totalRisk / terpc) : 0;
+            const totalCalculatedRisk = maxContracts * terpc;
+
+            outputs.maxContracts.textContent = maxContracts;
+            outputs.terpc.textContent = `$${terpc.toFixed(2)}`;
+            outputs.totalCalculatedRisk.textContent = `$${totalCalculatedRisk.toFixed(2)}`;
+
+            if (isNaN(values.tp1Price) || values.tp1Price <= 0) {
+                return;
+            }
+            
+            const totalRiskDistance = riskPoints + (values.slBuffer * instrumentInfo.tickSize);
+            const rewardDistance1 = Math.abs(values.tp1Price - values.entryPrice);
+            const rrr1 = totalRiskDistance > 0 ? rewardDistance1 / totalRiskDistance : 0;
+            
+            let rrr2 = 0;
+            if (!isNaN(values.tp2Price) && values.tp2Price > 0) {
+                const rewardDistance2 = Math.abs(values.tp2Price - values.entryPrice);
+                rrr2 = totalRiskDistance > 0 ? rewardDistance2 / totalRiskDistance : 0;
+            }
+            
+            updateRrrUI(rrr1, rrr2);
+        }
+        
+        function updateRrrUI(rrr1, rrr2) {
+            updateRrrDisplay(outputs.rrrTp1, rrr1);
+            updateRrrDisplay(outputs.rrrTp2, rrr2, true);
+
+            const totalRatio = 1 + rrr1;
+            const riskPercent = totalRatio > 0 ? (1 / totalRatio) * 100 : 50;
+            outputs.rrrBarRisk.style.width = `${riskPercent}%`;
+            outputs.rrrBarReward.style.width = `${100 - riskPercent}%`;
+            outputs.warningText.textContent = (rrr1 < 1 && rrr1 > 0) ? 'UPOZORNĚNÍ: Potenciální zisk je nižší než riziko!' : '';
+        }
+
+        function updateRrrDisplay(element, rrr, isOptional = false) {
+            if (isOptional && rrr <= 0) {
+                element.innerHTML = '_';
+                element.className = 'result-value-small';
+                return;
+            }
+            element.innerHTML = `<span class="rrr-indicator">${rrr.toFixed(2)} : 1</span>`;
+            const indicator = element.querySelector('.rrr-indicator');
+            if (rrr >= 2) indicator.style.backgroundColor = 'var(--success-color)';
+            else if (rrr >= 1) indicator.style.backgroundColor = 'var(--warning-color)';
+            else indicator.style.backgroundColor = 'var(--danger-color)';
+        }
+
+        function updateCommission() {
+            const platform = inputs.platform.value;
+            const instrument = inputs.instrument.value;
+            inputs.commission.disabled = (platform !== 'manual');
+            if (platform !== 'manual') {
+                inputs.commission.value = commissionPresets[platform]?.[instrument] || 0;
+            }
+            // Po ZMĚNĚ komise VŽDY spustit hlavní přepočet
+            calculateAndDisplay();
+        }
+
+        function resetOutputs() {
+            outputs.maxContracts.textContent = '_';
+            outputs.terpc.textContent = '_';
+            outputs.totalCalculatedRisk.textContent = '_';
+            outputs.rrrTp1.textContent = '_';
+            outputs.rrrTp1.className = 'result-value-small';
+            outputs.rrrTp2.textContent = '_';
+            outputs.rrrTp2.className = 'result-value-small';
+            outputs.warningText.textContent = '';
+            outputs.rrrBarRisk.style.width = '50%';
+            outputs.rrrBarReward.style.width = '50%';
+        }
+        
+        function saveToLocalStorage(values) {
+            localStorage.setItem('futuresCalculatorSettings_v4', JSON.stringify(values));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('futuresCalculatorSettings_v4');
+            if (saved) {
+                try {
+                    const settings = JSON.parse(saved);
+                    Object.keys(settings).forEach(key => {
+                       if (inputs[key]) inputs[key].value = settings[key] || '';
+                    });
+                } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); }
+            }
+            // Načtení spustí první aktualizaci komise a následný přepočet
+            updateCommission();
+        }
+
+        // --- ZMĚNA V EVENT LISTENERECH ---
+        // Hlavní listener pro jakoukoliv změnu v číselných polích
+        form.addEventListener('input', (event) => {
+            // Nespouštět pro select boxy, ty mají vlastní 'change' listenery
+            if (event.target.tagName !== 'SELECT') {
+                calculateAndDisplay();
+            }
+        });
+
+        // Dedikované listenery pro 'change', které zaručí správné pořadí
+        inputs.platform.addEventListener('change', updateCommission);
+        inputs.instrument.addEventListener('change', updateCommission);
+
+        // Načtení dat při startu
+        document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
+
+    </script>
+</body>
+</html>
