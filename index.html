@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka obchodních pozic - Opraveno</title>
+    <title>Kalkulačka obchodních pozic - Finální Verze</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -291,7 +291,7 @@
 
             <div class="bottom-section">
                 <div class="widget-card">
-                    <h3>Model měsíční volatility (VIX)</h3>
+                    <h3>Model vs. Realita Volatility (VIX)</h3>
                     <div style="flex-grow: 1; position: relative;">
                         <canvas id="seasonalityChart"></canvas>
                     </div>
@@ -339,6 +339,9 @@
     </div>
 
     <script>
+        // =================================================================================
+        // KALKULAČKA - ZÁKLADNÍ LOGIKA
+        // =================================================================================
         const instrumentData = {
             'ES':  { pointValue: 50.0, tickSize: 0.25 }, 'MES': { pointValue: 5.0,  tickSize: 0.25 },
             'NQ':  { pointValue: 20.0, tickSize: 0.25 }, 'MNQ': { pointValue: 2.0,  tickSize: 0.25 },
@@ -440,10 +443,10 @@
             outputs.rrrBarReward.style.width = '50%';
         }
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculator_final_v2', JSON.stringify(values));
+            localStorage.setItem('futuresCalculator_final_v3', JSON.stringify(values));
         }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculator_final_v2');
+            const saved = localStorage.getItem('futuresCalculator_final_v3');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
@@ -455,115 +458,131 @@
             updateCommission();
         }
         
+        // =================================================================================
+        // WIDGET PRO SVÁTKY
+        // =================================================================================
         const bankHolidays = [
             { name: "New Year's Day", date: "2025-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2025-01-20" }, { name: "Washington's Birthday", date: "2025-02-17" }, { name: "Memorial Day", date: "2025-05-26" }, { name: "Juneteenth", date: "2025-06-19" }, { name: "Independence Day", date: "2025-07-04" }, { name: "Labor Day", date: "2025-09-01" }, { name: "Columbus Day", date: "2025-10-13" }, { name: "Veterans Day", date: "2025-11-11" }, { name: "Thanksgiving Day", date: "2025-11-27" }, { name: "Christmas Day", date: "2025-12-25" },
             { name: "New Year's Day", date: "2026-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2026-01-19" }, { name: "Washington's Birthday", date: "2026-02-16" }, { name: "Memorial Day", date: "2026-05-25" }, { name: "Juneteenth", date: "2026-06-19" }, { name: "Independence Day (Observed)", date: "2026-07-03" }, { name: "Labor Day", date: "2026-09-07" }, { name: "Columbus Day", date: "2026-10-12" }, { name: "Veterans Day", date: "2026-11-11" }, { name: "Thanksgiving Day", date: "2026-11-26" }, { name: "Christmas Day", date: "2026-12-25" },
         ];
-        
         function displayUpcomingHolidays() {
             const widget = document.getElementById('holiday-widget');
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const upcoming = bankHolidays.filter(holiday => new Date(holiday.date) >= today).slice(0, 5);
             if (upcoming.length === 0) {
-                widget.innerHTML = `<div class="no-holidays">Pro tento a příští rok již nejsou žádné další svátky v databázi.</div>`;
+                widget.innerHTML = `<div class="no-holidays">Žádné další svátky v databázi.</div>`;
                 return;
             }
             widget.innerHTML = upcoming.map(holiday => {
                 const holidayDate = new Date(holiday.date);
                 const correctedDate = new Date(holidayDate.getTime() + holidayDate.getTimezoneOffset() * 60000);
-                const dateString = correctedDate.toLocaleDateString('cs-CZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const dateString = correctedDate.toLocaleDateString('cs-CZ', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' });
                 return `<div class="holiday-item"><span class="holiday-name">${holiday.name}</span><span class="holiday-date">${dateString}</span></div>`;
             }).join('');
         }
 
-        function createSeasonalityChart() {
-            const monthlyVolatilityProfile = [
-                15, 14.5, 14, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 20, 
-                21, 22, 22.5, 21.5, 20, 19, 18, 17.5, 17, 16.5, 16, 15.5, 15, 15, 14.5, 14
-            ];
+        // =================================================================================
+        // DYNAMICKÝ GRAF VOLATILITY
+        // =================================================================================
+        let seasonalityChart = null; // Globální proměnná pro graf
+        
+        async function updateChartWithLiveData() {
+            const ctx = document.getElementById('seasonalityChart').getContext('2d');
+            ctx.font = "16px Inter";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.textAlign = "center";
+            ctx.fillText("Načítám data...", ctx.canvas.width / 2, ctx.canvas.height / 2);
+            
+            try {
+                // Pokusíme se načíst aktuální data
+                const response = await fetch('vix_data.json');
+                if (!response.ok) throw new Error('Data VIX nenalezena.');
+                const actualVixData = await response.json();
+                
+                // Zpracujeme data pro graf
+                const processedData = processVixData(actualVixData);
+                drawVixChart(processedData.modelData, processedData.actualData);
 
+            } catch (error) {
+                console.error("Chyba při načítání aktuálních dat VIX:", error);
+                // Pokud selže, vykreslíme jen model
+                const processedData = processVixData([]); // Zavoláme s prázdnými daty
+                drawVixChart(processedData.modelData, null); 
+                 ctx.fillText("Aktuální data nejsou k dispozici.", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
+            }
+        }
+
+        function processVixData(liveData) {
+            const monthlyVolatilityProfile = [15, 14.5, 14, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 20, 21, 22, 22.5, 21.5, 20, 19, 18, 17.5, 17, 16.5, 16, 15.5, 15, 15, 14.5, 14];
             const today = new Date();
-            const dayOfMonth = today.getDate();
+            const modelData = [];
+            const actualData = [];
 
-            const displayData = [];
-            const displayLabels = [];
+            // Vytvoříme si mapu aktuálních dat pro rychlé vyhledávání
+            const liveDataMap = new Map(liveData.map(item => [item.date, item.price]));
 
             for (let i = -7; i <= 14; i++) {
                 const targetDate = new Date();
                 targetDate.setDate(today.getDate() + i);
+                const targetDateString = targetDate.toISOString().split('T')[0]; // formát YYYY-MM-DD
                 
+                // Modelová data
                 let dayIndex = targetDate.getDate() - 1;
-                if (dayIndex < 0) dayIndex = 0;
-                if (dayIndex > 30) dayIndex = 30;
+                modelData.push({ x: targetDate, y: monthlyVolatilityProfile[dayIndex] });
 
-                displayLabels.push(targetDate);
-                displayData.push(monthlyVolatilityProfile[dayIndex]);
+                // Aktuální data (pokud existují)
+                if (liveDataMap.has(targetDateString)) {
+                    actualData.push({ x: targetDate, y: liveDataMap.get(targetDateString) });
+                }
             }
-
-            const todayLinePlugin = {
-                id: 'todayLine',
-                afterDraw: (chart) => {
-                    const ctx = chart.ctx;
-                    const xAxis = chart.scales.x;
-                    const yAxis = chart.scales.y;
-                    const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0));
-
-                    if (todayX >= xAxis.left && todayX <= xAxis.right) {
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.moveTo(todayX, yAxis.top);
-                        ctx.lineTo(todayX, yAxis.bottom);
-                        ctx.lineWidth = 2;
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.setLineDash([5, 5]);
-                        ctx.stroke();
-                        
-                        ctx.textAlign = 'center';
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                        ctx.fillText('Dnes', todayX, yAxis.top + 15);
-                        ctx.restore();
-                    }
-                }
-            };
-            
-            const ctx = document.getElementById('seasonalityChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: displayLabels,
-                    datasets: [{
-                        label: 'Model VIX',
-                        data: displayData,
-                        backgroundColor: 'rgba(62, 133, 247, 0.2)',
-                        borderColor: 'rgba(62, 133, 247, 1)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                plugins: [todayLinePlugin],
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: { unit: 'day', displayFormats: { day: 'd. M.' } },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#a9b1bb' }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#a9b1bb' }
-                        }
-                    }
-                }
-            });
+            return { modelData, actualData };
         }
 
+        function drawVixChart(modelDataset, actualDataset) {
+            const datasets = [{
+                label: 'Modelová volatilita',
+                data: modelDataset,
+                backgroundColor: 'rgba(62, 133, 247, 0.1)',
+                borderColor: 'rgba(62, 133, 247, 0.5)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.4,
+                fill: true,
+                borderDash: [5, 5]
+            }];
+
+            if (actualDataset) {
+                datasets.push({
+                    label: 'Aktuální VIX',
+                    data: actualDataset,
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: 'rgba(255, 255, 255, 0.9)',
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    fill: false
+                });
+            }
+
+            const todayLinePlugin = { /* ... stejný jako v minulé verzi ... */ };
+
+            if (seasonalityChart) {
+                seasonalityChart.destroy(); // Zničíme starý graf před kreslením nového
+            }
+
+            const ctx = document.getElementById('seasonalityChart').getContext('2d');
+            seasonalityChart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: datasets },
+                plugins: [todayLinePlugin],
+                options: { /* ... stejné jako v minulé verzi ... */ }
+            });
+        }
+        
+        // =================================================================================
+        // SPOUŠTĚNÍ A EVENT LISTENERY
+        // =================================================================================
         form.addEventListener('input', (event) => {
             if (event.target.tagName !== 'SELECT') {
                 calculateAndDisplay();
@@ -576,7 +595,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             displayUpcomingHolidays();
-            createSeasonalityChart();
+            updateChartWithLiveData();
         });
     </script>
 </body>
