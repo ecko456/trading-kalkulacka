@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka Velikosti Pozice - Fibo Master Edice v8</title>
+    <title>Kalkulačka Velikosti Pozice - Fibo Master Edice v10</title>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -155,17 +155,42 @@
         .widget-card iframe {
             border-radius: 6px;
             border: 1px solid var(--border-color);
-            flex-grow: 1; /* Zajišťuje, aby iframe vyplnil kartu */
+            flex-grow: 1;
         }
         .tradingview-widget-container, .tradingview-widget-container__widget {
             height: 100% !important;
             flex-grow: 1;
         }
+        /* ZMĚNA: Nové styly pro náš vlastní widget svátků */
+        #holiday-widget {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .holiday-item {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--input-bg-color);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+        .holiday-name {
+            font-weight: bold;
+        }
+        .holiday-date {
+            color: #ccc;
+        }
+        .no-holidays {
+            text-align: center;
+            padding-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Kalkulačka Velikosti Pozice - Fibo Master Edice v8</h1>
+        <h1>Kalkulačka Velikosti Pozice - Fibo Master Edice v10</h1>
         <div class="grid-container">
             <div class="card">
                 <form id="calculator-form">
@@ -182,10 +207,9 @@
                         <div class="form-group"><label for="total-risk">Celkové Požadované Riziko na Obchod ($)</label><input type="number" id="total-risk" value="100" step="1"></div>
                     </fieldset>
                     <fieldset>
-                        <legend>3. Náklady a Buffery</legend>
+                        <legend>3. Náklady</legend>
                         <div class="form-group"><label for="platform">Obchodní Platforma</label><select id="platform"><option value="manual">Manuální Vstup</option><option value="apex-rithmic">Apex - Rithmic</option><option value="apex-tradovate">Apex - Tradovate</option></select></div>
-                        <div class="form-group"><label for="commission">Komise za Kontrakt (RT) ($)</label><input type="number" id="commission" step="0.01"></div>
-                        <div class="form-group"><label for="sl-buffer">Stop-Loss Buffer (v ticích)</label><input type="number" id="sl-buffer" value="0" step="1"></div>
+                        <div class="form-group"><label for="commission">Komise za Kontrakt (RT) ($)</label><input type="number" id="commission" value="0" step="0.01"></div>
                         <div class="form-group"><label for="slippage">Předpokládaný Slippage (v ticích)</label><input type="number" id="slippage" value="1" step="1"></div>
                     </fieldset>
                 </form>
@@ -239,14 +263,14 @@
                 </div>
                 <div class="widget-card">
                     <h3>Bankovní svátky (USA)</h3>
-                    <iframe src="https://sslecal2.investing.com/holiday-calendar/Service?columns=exc_flags,exc_name,exc_date&countries=5&timeZone=69&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+                    <div id="holiday-widget"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // JavaScript zůstává beze změny, protože problém byl v HTML kódu widgetů.
+        // --- ZÁKLADNÍ NASTAVENÍ A VÝPOČTY (beze změny) ---
         const instrumentData = {
             'ES':  { pointValue: 50.0, tickSize: 0.25 }, 'MES': { pointValue: 5.0,  tickSize: 0.25 },
             'NQ':  { pointValue: 20.0, tickSize: 0.25 }, 'MNQ': { pointValue: 2.0,  tickSize: 0.25 },
@@ -263,7 +287,7 @@
             entryPrice: document.getElementById('entry-price'), stopLossPrice: document.getElementById('stop-loss-price'),
             tp1Price: document.getElementById('tp1-price'), tp2Price: document.getElementById('tp2-price'),
             totalRisk: document.getElementById('total-risk'), platform: document.getElementById('platform'),
-            commission: document.getElementById('commission'), slBuffer: document.getElementById('sl-buffer'),
+            commission: document.getElementById('commission'),
             slippage: document.getElementById('slippage'),
         };
         const outputs = {
@@ -279,21 +303,23 @@
             }
             saveToLocalStorage(values);
             resetOutputs();
-            if (isNaN(values.entryPrice) || isNaN(values.stopLossPrice) || values.totalRisk <= 0) { return; }
+            if (isNaN(values.entryPrice) || isNaN(values.stopLossPrice) || values.entryPrice <= 0 || values.stopLossPrice <= 0 || values.totalRisk <= 0) {
+                return;
+            }
             const instrumentInfo = instrumentData[values.instrument];
             const tickValue = instrumentInfo.pointValue * instrumentInfo.tickSize;
             const riskPoints = Math.abs(values.entryPrice - values.stopLossPrice);
             const crpcRaw = (riskPoints / instrumentInfo.tickSize) * tickValue;
-            const bufferCost = values.slBuffer * tickValue;
+            const commissionValue = isNaN(values.commission) ? 0 : values.commission;
             const slippageCost = values.slippage * tickValue;
-            const terpc = crpcRaw + values.commission + bufferCost + slippageCost;
+            const terpc = crpcRaw + commissionValue + slippageCost;
             const maxContracts = (terpc > 0) ? Math.floor(values.totalRisk / terpc) : 0;
             const totalCalculatedRisk = maxContracts * terpc;
             outputs.maxContracts.textContent = maxContracts;
             outputs.terpc.textContent = `$${terpc.toFixed(2)}`;
             outputs.totalCalculatedRisk.textContent = `$${totalCalculatedRisk.toFixed(2)}`;
             if (isNaN(values.tp1Price) || values.tp1Price <= 0) { return; }
-            const totalRiskDistance = riskPoints + (values.slBuffer * instrumentInfo.tickSize);
+            const totalRiskDistance = riskPoints;
             const rewardDistance1 = Math.abs(values.tp1Price - values.entryPrice);
             const rrr1 = totalRiskDistance > 0 ? rewardDistance1 / totalRiskDistance : 0;
             let rrr2 = 0;
@@ -346,10 +372,10 @@
             outputs.rrrBarReward.style.width = '50%';
         }
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculatorSettings_v8', JSON.stringify(values));
+            localStorage.setItem('futuresCalculatorSettings_v10', JSON.stringify(values));
         }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculatorSettings_v8');
+            const saved = localStorage.getItem('futuresCalculatorSettings_v10');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
@@ -360,14 +386,75 @@
             }
             updateCommission();
         }
-        form.addEventListener('input', (event) => {
-            if (event.target.tagName !== 'SELECT') {
-                calculateAndDisplay();
+        form.addEventListener('input', calculateAndDisplay);
+
+
+        // --- ZMĚNA: NOVÁ SEKCE PRO ZOBRAZENÍ SVÁTKŮ ---
+
+        const bankHolidays = [
+            // 2025
+            { name: "New Year's Day", date: "2025-01-01" },
+            { name: "Martin Luther King, Jr. Day", date: "2025-01-20" },
+            { name: "Washington's Birthday", date: "2025-02-17" },
+            { name: "Memorial Day", date: "2025-05-26" },
+            { name: "Juneteenth", date: "2025-06-19" },
+            { name: "Independence Day", date: "2025-07-04" },
+            { name: "Labor Day", date: "2025-09-01" },
+            { name: "Columbus Day", date: "2025-10-13" },
+            { name: "Veterans Day", date: "2025-11-11" },
+            { name: "Thanksgiving Day", date: "2025-11-27" },
+            { name: "Christmas Day", date: "2025-12-25" },
+            // 2026
+            { name: "New Year's Day", date: "2026-01-01" },
+            { name: "Martin Luther King, Jr. Day", date: "2026-01-19" },
+            { name: "Washington's Birthday", date: "2026-02-16" },
+            { name: "Memorial Day", date: "2026-05-25" },
+            { name: "Juneteenth", date: "2026-06-19" },
+            { name: "Independence Day (Observed)", date: "2026-07-03" }, // July 4th is a Saturday
+            { name: "Labor Day", date: "2026-09-07" },
+            { name: "Columbus Day", date: "2026-10-12" },
+            { name: "Veterans Day", date: "2026-11-11" },
+            { name: "Thanksgiving Day", date: "2026-11-26" },
+            { name: "Christmas Day", date: "2026-12-25" },
+        ];
+
+        function displayUpcomingHolidays() {
+            const widget = document.getElementById('holiday-widget');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalizujeme na začátek dne
+
+            const upcoming = bankHolidays
+                .filter(holiday => new Date(holiday.date) >= today)
+                .slice(0, 5); // Zobrazíme maximálně 5 nadcházejících svátků
+
+            if (upcoming.length === 0) {
+                widget.innerHTML = `<div class="no-holidays">Pro tento a příští rok již nejsou žádné další svátky v databázi.</div>`;
+                return;
             }
+
+            widget.innerHTML = upcoming.map(holiday => {
+                const holidayDate = new Date(holiday.date);
+                // Přičteme časové pásmo, aby se datum zobrazilo správně a neposunulo o den zpět
+                const correctedDate = new Date(holidayDate.getTime() + holidayDate.getTimezoneOffset() * 60000);
+
+                const dateString = correctedDate.toLocaleDateString('cs-CZ', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+
+                return `
+                    <div class="holiday-item">
+                        <span class="holiday-name">${holiday.name}</span>
+                        <span class="holiday-date">${dateString}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- SPOUŠTĚNÍ PO NAČTENÍ STRÁNKY ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            displayUpcomingHolidays(); // ZMĚNA: Spustíme naši novou funkci pro zobrazení svátků
         });
-        inputs.platform.addEventListener('change', updateCommission);
-        inputs.instrument.addEventListener('change', updateCommission);
-        document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
     </script>
 </body>
 </html>
