@@ -146,10 +146,20 @@
             padding: 25px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .widget-card h3 {
+             text-align:center; color: var(--primary-color); margin-top:0;
         }
         .widget-card iframe {
             border-radius: 6px;
             border: 1px solid var(--border-color);
+            flex-grow: 1; /* Zajišťuje, aby iframe vyplnil kartu */
+        }
+        .tradingview-widget-container, .tradingview-widget-container__widget {
+            height: 100% !important;
+            flex-grow: 1;
         }
     </style>
 </head>
@@ -194,24 +204,49 @@
 
             <div class="bottom-section">
                 <div class="widget-card">
-                    <h3 style="text-align:center; color: var(--primary-color); margin-top:0;">Ekonomický kalendář</h3>
-                    <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone,timeselector,filters&countries=25,5,72,6,17,35,43,10&calType=week&timeZone=69&importance=3&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+                    <h3>Ekonomický kalendář (Red News - USA)</h3>
+                    <div class="tradingview-widget-container">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                        {
+                          "colorTheme": "dark",
+                          "isTransparent": true,
+                          "width": "100%",
+                          "height": "100%",
+                          "locale": "cs_CZ",
+                          "importanceFilter": "1",
+                          "currencyFilter": "USD"
+                        }
+                        </script>
+                    </div>
                 </div>
                 <div class="widget-card">
-                    <h3 style="text-align:center; color: var(--primary-color); margin-top:0;">Tržní zprávy</h3>
-                    <div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>{"feedMode": "all_symbols","colorTheme": "dark","isTransparent": true,"displayMode": "regular","width": "100%","height": "400","locale": "cs_CZ"}</script></div>
+                    <h3>Tržní zprávy</h3>
+                    <div class="tradingview-widget-container">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+                        {
+                            "feedMode": "all_symbols",
+                            "colorTheme": "dark",
+                            "isTransparent": true,
+                            "displayMode": "regular",
+                            "width": "100%",
+                            "height": "100%",
+                            "locale": "cs_CZ"
+                        }
+                        </script>
+                    </div>
                 </div>
                 <div class="widget-card">
-                    <h3 style="text-align:center; color: var(--primary-color); margin-top:0;">Bankovní svátky</h3>
-                    <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance&features=datepicker,timezone,timeselector,filters&countries=25,5,32,37,72,6,17,35,43,10&calType=month&timeZone=69&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+                    <h3>Bankovní svátky (USA)</h3>
+                    <iframe src="https://sslecal2.investing.com/holiday-calendar/Service?columns=exc_flags,exc_name,exc_date&countries=5&timeZone=69&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // JavaScript zůstává beze změny, protože problém se svátky je ve způsobu spuštění, ne v kódu.
-        // A úprava kalendáře je pouze ve změně URL adresy v HTML.
+        // JavaScript zůstává beze změny, protože problém byl v HTML kódu widgetů.
         const instrumentData = {
             'ES':  { pointValue: 50.0, tickSize: 0.25 }, 'MES': { pointValue: 5.0,  tickSize: 0.25 },
             'NQ':  { pointValue: 20.0, tickSize: 0.25 }, 'MNQ': { pointValue: 2.0,  tickSize: 0.25 },
