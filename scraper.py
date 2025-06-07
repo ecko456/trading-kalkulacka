@@ -13,7 +13,7 @@ URL = "https://www.investing.com/indices/volatility-s-p-500-historical-data"
 def get_vix_data():
     print("Spouštím Selenium WebDriver...")
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Spustí prohlížeč bez grafického rozhraní
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
@@ -25,13 +25,27 @@ def get_vix_data():
         print(f"Navštěvuji stránku: {URL}")
         driver.get(URL)
 
-        # Čekáme maximálně 20 sekund, dokud se neobjeví tabulka s daty
-        print("Čekám, až se tabulka s daty načte pomocí JavaScriptu...")
+        # --- NOVÝ KROK: Zpracování Cookie Banneru ---
+        try:
+            # Čekáme max 10 sekund, zda se objeví tlačítko pro přijetí cookies
+            print("Čekám na cookie banner...")
+            accept_button_wait = WebDriverWait(driver, 10)
+            # ID tlačítka je často 'onetrust-accept-btn-handler' na mnoha webech
+            accept_button = accept_button_wait.until(EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler")))
+            
+            print("Cookie banner nalezen, klikám na 'Souhlasím'...")
+            accept_button.click()
+            time.sleep(2) # Krátká pauza, aby se banner stihl zavřít
+        except:
+            # Pokud se banner neobjeví do 10 sekund, nic se neděje, pokračujeme dál
+            print("Cookie banner nenalezen, pokračuji dále.")
+        # ---------------------------------------------
+
+        print("Nyní čekám, až se tabulka s daty načte...")
         wait = WebDriverWait(driver, 20)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table[data-test='historical-data-table']")))
         print("Tabulka nalezena!")
 
-        # Získáme HTML obsah stránky AŽ POTÉ, co se vše načetlo
         html_content = driver.page_source
         soup = BeautifulSoup(html_content, 'html.parser')
         
