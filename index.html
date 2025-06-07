@@ -245,6 +245,22 @@
             text-align: center;
             padding-top: 20px;
         }
+
+        .analysis-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            text-align: center;
+            transition: background-color 0.2s ease;
+        }
+        .analysis-link:hover {
+            background-color: var(--primary-hover-color);
+        }
     </style>
 </head>
 <body>
@@ -288,8 +304,8 @@
             <div class="bottom-section">
                 <div class="widget-card">
                     <h3>Index Volatility (VIX)</h3>
-                    <div class="tradingview-widget-container" style="height: 100%;">
-                        <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+                    <div class="tradingview-widget-container" style="height: 100%; display: flex; flex-direction: column;">
+                        <div class="tradingview-widget-container__widget" style="flex-grow: 1;"></div>
                         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
                         {
                           "symbol": "TVC:VIX",
@@ -303,6 +319,9 @@
                           "largeChartUrl": ""
                         }
                         </script>
+                        <a href="https://unusualwhales.com/stock/VIX/seasonality" target="_blank" class="analysis-link">
+                            Zobrazit sezónní analýzu
+                        </a>
                     </div>
                 </div>
                 <div class="widget-card">
@@ -449,10 +468,10 @@
             outputs.rrrBarReward.style.width = '50%';
         }
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculatorSettings_v12', JSON.stringify(values));
+            localStorage.setItem('futuresCalculatorSettings_final_v1', JSON.stringify(values));
         }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculatorSettings_v12');
+            const saved = localStorage.getItem('futuresCalculatorSettings_final_v1');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
