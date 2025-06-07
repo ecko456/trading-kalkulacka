@@ -364,7 +364,6 @@
             rrrBarReward: document.getElementById('rrr-bar-reward'), warningText: document.getElementById('warning-text'),
             totalCalculatedRisk: document.getElementById('total-calculated-risk'), terpc: document.getElementById('terpc'),
         };
-
         function calculateAndDisplay() {
             const values = {};
             for (const key in inputs) {
@@ -398,7 +397,6 @@
             }
             updateRrrUI(rrr1, rrr2);
         }
-
         function updateRrrUI(rrr1, rrr2) {
             updateRrrDisplay(outputs.rrrTp1, rrr1);
             updateRrrDisplay(outputs.rrrTp2, rrr2, true);
@@ -408,7 +406,6 @@
             outputs.rrrBarReward.style.width = `${100 - riskPercent}%`;
             outputs.warningText.textContent = (rrr1 < 1 && rrr1 > 0) ? 'UPOZORNĚNÍ: Potenciální zisk je nižší než riziko!' : '';
         }
-
         function updateRrrDisplay(element, rrr, isOptional = false) {
             if (isOptional && rrr <= 0) {
                 element.innerHTML = '_';
@@ -421,7 +418,6 @@
             else if (rrr >= 1) indicator.style.backgroundColor = 'var(--warning-color)';
             else indicator.style.backgroundColor = 'var(--danger-color)';
         }
-
         function updateCommission() {
             const platform = inputs.platform.value;
             const instrument = inputs.instrument.value;
@@ -431,7 +427,6 @@
             }
             calculateAndDisplay();
         }
-
         function resetOutputs() {
             outputs.maxContracts.textContent = '_';
             outputs.terpc.textContent = '_';
@@ -444,11 +439,9 @@
             outputs.rrrBarRisk.style.width = '50%';
             outputs.rrrBarReward.style.width = '50%';
         }
-
         function saveToLocalStorage(values) {
             localStorage.setItem('futuresCalculator_final_v2', JSON.stringify(values));
         }
-
         function loadFromLocalStorage() {
             const saved = localStorage.getItem('futuresCalculator_final_v2');
             if (saved) {
@@ -571,19 +564,15 @@
             });
         }
 
-        // === EVENT LISTENERS ===
-        // Reaguje na jakýkoli textový/číselný vstup
         form.addEventListener('input', (event) => {
             if (event.target.tagName !== 'SELECT') {
                 calculateAndDisplay();
             }
         });
-
-        // OPRAVA: Vrácené posluchače pro výběrová pole
+        
         inputs.platform.addEventListener('change', updateCommission);
         inputs.instrument.addEventListener('change', updateCommission);
 
-        // Spuštění funkcí po načtení stránky
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             displayUpcomingHolidays();
