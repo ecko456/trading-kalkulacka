@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka obchodních pozic - Finální Verze</title>
+    <title>Trading Dashboard - Finální Verze</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/locale/cs/index.js"></script>
     
     <style>
         :root {
@@ -253,7 +254,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Kalkulačka obchodních pozic</h1>
+        <h1>Trading Dashboard</h1>
         <div class="grid-container">
             <div class="card">
                 <form id="calculator-form">
@@ -483,33 +484,45 @@
         }
 
         // =================================================================================
-        // DYNAMICKÝ GRAF VOLATILITY
+        // DYNAMICKÝ GRAF VOLATILITY S AKTUÁLNÍMI DATY
         // =================================================================================
-        let seasonalityChart = null; // Globální proměnná pro graf
+        let seasonalityChart = null;
         
         async function updateChartWithLiveData() {
-            const ctx = document.getElementById('seasonalityChart').getContext('2d');
+            const canvas = document.getElementById('seasonalityChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Zobrazíme zprávu o načítání
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = "16px Inter";
             ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
             ctx.textAlign = "center";
-            ctx.fillText("Načítám data...", ctx.canvas.width / 2, ctx.canvas.height / 2);
+            ctx.fillText("Načítám aktuální data VIX...", canvas.width / 2, canvas.height / 2);
             
             try {
-                // Pokusíme se načíst aktuální data
+                // Pokusíme se načíst aktuální data z našeho JSON souboru
                 const response = await fetch('vix_data.json');
-                if (!response.ok) throw new Error('Data VIX nenalezena.');
+                if (!response.ok) {
+                    // Pokud soubor neexistuje (např. chyba robota), zobrazíme jen model
+                    throw new Error('Soubor vix_data.json nenalezen.');
+                }
                 const actualVixData = await response.json();
                 
-                // Zpracujeme data pro graf
                 const processedData = processVixData(actualVixData);
                 drawVixChart(processedData.modelData, processedData.actualData);
 
             } catch (error) {
                 console.error("Chyba při načítání aktuálních dat VIX:", error);
-                // Pokud selže, vykreslíme jen model
+                // Pokud selže, vykreslíme jen model a chybovou hlášku
                 const processedData = processVixData([]); // Zavoláme s prázdnými daty
                 drawVixChart(processedData.modelData, null); 
-                 ctx.fillText("Aktuální data nejsou k dispozici.", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
+                
+                // Přidáme zprávu o chybě do grafu
+                const canvasCtx = document.getElementById('seasonalityChart').getContext('2d');
+                canvasCtx.font = "14px Inter";
+                canvasCtx.fillStyle = "rgba(253, 126, 20, 0.8)";
+                canvasCtx.textAlign = "center";
+                canvasCtx.fillText("Aktuální data nejsou k dispozici.", canvas.width / 2, canvas.height / 2 + 30);
             }
         }
 
@@ -519,21 +532,19 @@
             const modelData = [];
             const actualData = [];
 
-            // Vytvoříme si mapu aktuálních dat pro rychlé vyhledávání
             const liveDataMap = new Map(liveData.map(item => [item.date, item.price]));
 
             for (let i = -7; i <= 14; i++) {
                 const targetDate = new Date();
+                targetDate.setHours(12, 0, 0, 0);
                 targetDate.setDate(today.getDate() + i);
-                const targetDateString = targetDate.toISOString().split('T')[0]; // formát YYYY-MM-DD
+                const targetDateString = targetDate.toISOString().split('T')[0];
                 
-                // Modelová data
                 let dayIndex = targetDate.getDate() - 1;
-                modelData.push({ x: targetDate, y: monthlyVolatilityProfile[dayIndex] });
+                modelData.push({ x: targetDate.getTime(), y: monthlyVolatilityProfile[dayIndex] });
 
-                // Aktuální data (pokud existují)
                 if (liveDataMap.has(targetDateString)) {
-                    actualData.push({ x: targetDate, y: liveDataMap.get(targetDateString) });
+                    actualData.push({ x: targetDate.getTime(), y: liveDataMap.get(targetDateString) });
                 }
             }
             return { modelData, actualData };
@@ -541,42 +552,93 @@
 
         function drawVixChart(modelDataset, actualDataset) {
             const datasets = [{
-                label: 'Modelová volatilita',
+                label: 'Modelová volatilita (průměr)',
                 data: modelDataset,
-                backgroundColor: 'rgba(62, 133, 247, 0.1)',
-                borderColor: 'rgba(62, 133, 247, 0.5)',
+                borderColor: 'rgba(62, 133, 247, 0.6)',
                 borderWidth: 2,
                 pointRadius: 0,
                 tension: 0.4,
-                fill: true,
-                borderDash: [5, 5]
+                borderDash: [5, 5],
             }];
 
-            if (actualDataset) {
+            if (actualDataset && actualDataset.length > 0) {
                 datasets.push({
-                    label: 'Aktuální VIX',
+                    label: 'Aktuální VIX (realita)',
                     data: actualDataset,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    borderColor: 'rgba(255, 255, 255, 0.9)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: 'rgba(255, 255, 255, 1)',
                     borderWidth: 2.5,
                     pointRadius: 0,
                     tension: 0.4,
-                    fill: false
+                    fill: 'origin',
                 });
             }
 
-            const todayLinePlugin = { /* ... stejný jako v minulé verzi ... */ };
+            const todayLinePlugin = {
+                id: 'todayLine',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const xAxis = chart.scales.x;
+                    const yAxis = chart.scales.y;
+                    const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0));
 
+                    if (todayX >= xAxis.left && todayX <= xAxis.right) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(todayX, yAxis.top);
+                        ctx.lineTo(todayX, yAxis.bottom);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.fillText('Dnes', todayX, yAxis.top + 15);
+                        ctx.restore();
+                    }
+                }
+            };
+            
+            const ctx = document.getElementById('seasonalityChart').getContext('2d');
+            
             if (seasonalityChart) {
-                seasonalityChart.destroy(); // Zničíme starý graf před kreslením nového
+                seasonalityChart.destroy();
             }
 
-            const ctx = document.getElementById('seasonalityChart').getContext('2d');
             seasonalityChart = new Chart(ctx, {
                 type: 'line',
                 data: { datasets: datasets },
                 plugins: [todayLinePlugin],
-                options: { /* ... stejné jako v minulé verzi ... */ }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { 
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                font: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        } 
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'day', displayFormats: { day: 'd. M.' } },
+                            adapters: { date: { locale: 'cs' } },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#a9b1bb' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#a9b1bb' }
+                        }
+                    }
+                }
             });
         }
         
@@ -595,7 +657,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             displayUpcomingHolidays();
-            updateChartWithLiveData();
+            updateChartWithLiveData(); // Načteme data a vykreslíme graf
         });
     </script>
 </body>
