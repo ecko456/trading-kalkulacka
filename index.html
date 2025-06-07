@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka Velikosti Pozice - Fibo Master Edice v4</title>
+    <title>Kalkulačka Velikosti Pozice</title>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -26,7 +26,7 @@
             justify-content: center;
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px; /* Rozšíření kontejneru pro dva widgety */
             width: 100%;
         }
         h1 {
@@ -129,14 +129,26 @@
             margin-top: 10px;
             text-align: center;
         }
+        .news-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 1024px) {
+            .news-section {
+                 grid-template-columns: 1fr 1fr;
+            }
+        }
         .news-widget-container iframe {
             border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Kalkulačka Velikosti Pozice - Fibo Master Edice v4</h1>
+        <h1>Kalkulačka Velikosti Pozice - Fibo Master Edice v5</h1>
         <div class="grid-container">
             <div class="card">
                 <form id="calculator-form">
@@ -175,13 +187,6 @@
                         <div class="form-group"><label for="sl-buffer">Stop-Loss Buffer (v ticích)</label><input type="number" id="sl-buffer" value="0" step="1"></div>
                         <div class="form-group"><label for="slippage">Předpokládaný Slippage (v ticích)</label><input type="number" id="slippage" value="1" step="1"></div>
                     </fieldset>
-                    
-                    <fieldset>
-                        <legend>4. Klíčové Zprávy (Red News)</legend>
-                        <div class="news-widget-container">
-                             <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone,timeselector,filters&countries=25,5,72,6,17,35,43,10&calType=day&timeZone=69&importance=3&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
-                        </div>
-                    </fieldset>
                 </form>
             </div>
             <div class="card">
@@ -217,6 +222,35 @@
                     </div>
                 </div>
             </div>
+
+            <div class="news-section card">
+                <div class="news-widget">
+                    <h3 style="text-align:center; color: var(--primary-color); margin-top:0;">Ekonomický kalendář (Red News)</h3>
+                    <div class="news-widget-container">
+                         <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone,timeselector,filters&countries=25,5,72,6,17,35,43,10&calType=day&timeZone=69&importance=3&lang=18" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+                    </div>
+                </div>
+                <div class="news-widget">
+                    <h3 style="text-align:center; color: var(--primary-color); margin-top:0;">Tržní zprávy (Vč. politiky)</h3>
+                     <div class="news-widget-container">
+                        <div class="tradingview-widget-container">
+                          <div class="tradingview-widget-container__widget"></div>
+                          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+                          {
+                          "feedMode": "all_symbols",
+                          "colorTheme": "dark",
+                          "isTransparent": true,
+                          "displayMode": "regular",
+                          "width": "100%",
+                          "height": "400",
+                          "locale": "cs_CZ"
+                          }
+                          </script>
+                        </div>
+                        </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -324,7 +358,6 @@
             if (platform !== 'manual') {
                 inputs.commission.value = commissionPresets[platform]?.[instrument] || 0;
             }
-            // Po ZMĚNĚ komise VŽDY spustit hlavní přepočet
             calculateAndDisplay();
         }
 
@@ -342,11 +375,11 @@
         }
         
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculatorSettings_v4', JSON.stringify(values));
+            localStorage.setItem('futuresCalculatorSettings_v5', JSON.stringify(values));
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculatorSettings_v4');
+            const saved = localStorage.getItem('futuresCalculatorSettings_v5');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
@@ -355,24 +388,18 @@
                     });
                 } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); }
             }
-            // Načtení spustí první aktualizaci komise a následný přepočet
             updateCommission();
         }
 
-        // --- ZMĚNA V EVENT LISTENERECH ---
-        // Hlavní listener pro jakoukoliv změnu v číselných polích
         form.addEventListener('input', (event) => {
-            // Nespouštět pro select boxy, ty mají vlastní 'change' listenery
             if (event.target.tagName !== 'SELECT') {
                 calculateAndDisplay();
             }
         });
 
-        // Dedikované listenery pro 'change', které zaručí správné pořadí
         inputs.platform.addEventListener('change', updateCommission);
         inputs.instrument.addEventListener('change', updateCommission);
 
-        // Načtení dat při startu
         document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
 
     </script>
