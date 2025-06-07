@@ -3,189 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulačka Velikosti Pozice - Fibo Master Edice v11</title>
+    <title>Kalkulačka obchodních pozic - Finální Verze</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --form-bg-color: #2b2b2b;
-            --text-color: #e0e0e0;
-            --primary-color: #ffc107;
-            --input-bg-color: #3c3c3c;
-            --border-color: #555;
+            --bg-color: #1c2025;
+            --form-bg-color: #252a31;
+            --text-color: #e1e3e6;
+            --text-secondary-color: #a9b1bb;
+            --primary-color: #3e85f7;
+            --primary-hover-color: #5a9eff;
+            --input-bg-color: #1c2025;
+            --border-color: #3a414b;
             --success-color: #28a745;
             --warning-color: #fd7e14;
             --danger-color: #dc3545;
+            --shadow-color: rgba(0, 0, 0, 0.2);
         }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
         .container {
             max-width: 1400px;
             width: 100%;
         }
+
         h1 {
-            color: var(--primary-color);
+            color: var(--text-color);
             text-align: center;
             margin-bottom: 2rem;
+            font-weight: 600;
         }
+
         .grid-container {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 25px;
         }
+
         @media (min-width: 1024px) {
             .grid-container {
                 grid-template-columns: 1fr 1fr;
             }
         }
+        
         .card {
             background-color: var(--form-bg-color);
-            padding: 25px;
-            border-radius: 8px;
+            padding: 30px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow-color);
+        }
+        
         fieldset {
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 20px;
         }
+
         legend {
             color: var(--primary-color);
-            font-weight: bold;
+            font-weight: 600;
             padding: 0 10px;
+            font-size: 1.1em;
         }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
         }
+
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-size: 0.9em;
-            color: #ccc;
+            color: var(--text-secondary-color);
+            font-weight: 500;
         }
+
         input, select {
             background-color: var(--input-bg-color);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 10px;
+            border-radius: 6px;
+            padding: 12px;
             width: 100%;
             box-sizing: border-box;
+            font-size: 1em;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(62, 133, 247, 0.25);
+        }
+
         input:disabled {
-            background-color: #333;
+            background-color: #2a2f37;
             cursor: not-allowed;
         }
+
         .results-grid {
             display: grid;
-            gap: 15px;
+            gap: 18px;
         }
+
         .result-item {
-            background-color: var(--input-bg-color);
-            padding: 15px;
-            border-radius: 6px;
+            background-color: var(--bg-color);
+            padding: 20px;
+            border-radius: 8px;
             text-align: center;
+            border: 1px solid var(--border-color);
         }
+
         .result-label {
             font-size: 0.9em;
-            color: #ccc;
+            color: var(--text-secondary-color);
             margin-bottom: 8px;
+            font-weight: 500;
         }
+
         .result-value {
-            font-size: 1.8em;
-            font-weight: bold;
+            font-size: 2em;
+            font-weight: 700;
             color: var(--primary-color);
         }
+
         .result-value-small {
-            font-size: 1.2em;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--text-color);
         }
+        
         .rrr-indicator {
-            padding: 3px 8px;
-            border-radius: 4px;
+            padding: 5px 10px;
+            border-radius: 6px;
             color: white;
-            font-weight: bold;
+            font-weight: 600;
             display: inline-block;
         }
+        
         .rrr-bar {
             display: flex;
-            height: 25px;
-            border-radius: 4px;
+            height: 10px;
+            border-radius: 10px;
             overflow: hidden;
-            background-color: #555;
-            margin-top: 10px;
+            background-color: var(--input-bg-color);
+            margin-top: 15px;
         }
+
         .rrr-risk { background-color: var(--danger-color); }
         .rrr-reward { background-color: var(--success-color); }
+        
         #warning-text {
-            color: var(--danger-color);
-            font-weight: bold;
-            margin-top: 10px;
+            color: var(--warning-color);
+            font-weight: 500;
+            margin-top: 15px;
             text-align: center;
         }
+
         .bottom-section {
             grid-column: 1 / -1;
             display: grid;
-            gap: 20px;
-            margin-top: 20px;
-            /* ZMĚNA: Úprava mřížky pro lepší rozložení widgetů */
+            gap: 25px;
+            margin-top: 25px;
             grid-template-columns: 1fr;
         }
+
         @media (min-width: 1200px) {
             .bottom-section {
-                 /* ZMĚNA: 2x2 mřížka pro 4 widgety */
                  grid-template-columns: 1fr 1fr;
             }
         }
+        
         .widget-card {
             background-color: var(--form-bg-color);
-            padding: 25px;
-            border-radius: 8px;
+            padding: 30px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
             display: flex;
             flex-direction: column;
-            min-height: 400px; /* Zajistí jednotnou minimální výšku */
+            min-height: 420px;
         }
+
         .widget-card h3 {
-             text-align:center; color: var(--primary-color); margin-top:0;
+             text-align:center;
+             color: var(--text-secondary-color);
+             margin-top:0;
+             margin-bottom: 20px;
+             font-weight: 500;
         }
-        .widget-card iframe {
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            flex-grow: 1;
-        }
+        
         .tradingview-widget-container, .tradingview-widget-container__widget {
             height: 100% !important;
             flex-grow: 1;
         }
+        
         #holiday-widget {
             flex-grow: 1;
             overflow-y: auto;
-            padding-right: 10px;
         }
         .holiday-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: var(--input-bg-color);
-            padding: 12px;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border-radius: 6px;
             margin-bottom: 10px;
-            border-left: 4px solid var(--primary-color);
+            border-left: 3px solid var(--primary-color);
         }
         .holiday-name {
-            font-weight: bold;
+            font-weight: 500;
             margin-right: 15px;
         }
         .holiday-date {
-            color: #ccc;
+            color: var(--text-secondary-color);
             white-space: nowrap;
+            font-size: 0.9em;
         }
         .no-holidays {
             text-align: center;
@@ -195,57 +249,58 @@
 </head>
 <body>
     <div class="container">
-        <h1>Kalkulačka Velikosti Pozice - Fibo Master Edice v11</h1>
+        <h1>Kalkulačka obchodních pozic</h1>
         <div class="grid-container">
             <div class="card">
                 <form id="calculator-form">
                     <fieldset>
-                        <legend>1. Definice Obchodu</legend>
+                        <legend>Parametry obchodu</legend>
                         <div class="form-group"><label for="instrument">Instrument</label><select id="instrument"><option value="ES">ES (E-mini S&P 500)</option><option value="MES">MES (Micro E-mini S&P 500)</option><option value="NQ">NQ (E-mini Nasdaq 100)</option><option value="MNQ">MNQ (Micro E-mini Nasdaq 100)</option><option value="GC">GC (Gold)</option><option value="MGC">MGC (Micro Gold)</option><option value="CL">CL (Crude Oil)</option><option value="MCL">MCL (Micro Crude Oil)</option></select></div>
                     </fieldset>
                     <fieldset>
-                        <legend>2. Cenové Úrovně a Riziko</legend>
-                        <div class="form-group"><label for="entry-price">Vstupní Cena</label><input type="number" id="entry-price" step="0.01"></div>
-                        <div class="form-group"><label for="stop-loss-price">Stop-Loss Cena</label><input type="number" id="stop-loss-price" step="0.01"></div>
-                        <div class="form-group"><label for="tp1-price">Profit Target 1 Cena</label><input type="number" id="tp1-price" step="0.01"></div>
-                        <div class="form-group"><label for="tp2-price">Profit Target 2 Cena (volitelné)</label><input type="number" id="tp2-price" step="0.01"></div>
-                        <div class="form-group"><label for="total-risk">Celkové Požadované Riziko na Obchod ($)</label><input type="number" id="total-risk" value="100" step="1"></div>
+                        <legend>Cenové úrovně a riziko</legend>
+                        <div class="form-group"><label for="entry-price">Vstupní cena</label><input type="number" id="entry-price" step="0.01"></div>
+                        <div class="form-group"><label for="stop-loss-price">Stop-Loss cena</label><input type="number" id="stop-loss-price" step="0.01"></div>
+                        <div class="form-group"><label for="tp1-price">Profit Target 1</label><input type="number" id="tp1-price" step="0.01"></div>
+                        <div class="form-group"><label for="tp2-price">Profit Target 2 (volitelné)</label><input type="number" id="tp2-price" step="0.01"></div>
+                        <div class="form-group"><label for="total-risk">Maximální riziko na obchod ($)</label><input type="number" id="total-risk" value="100" step="1"></div>
                     </fieldset>
                     <fieldset>
-                        <legend>3. Náklady</legend>
-                        <div class="form-group"><label for="platform">Obchodní Platforma</label><select id="platform"><option value="manual">Manuální Vstup</option><option value="apex-rithmic">Apex - Rithmic</option><option value="apex-tradovate">Apex - Tradovate</option></select></div>
-                        <div class="form-group"><label for="commission">Komise za Kontrakt (RT) ($)</label><input type="number" id="commission" value="0" step="0.01"></div>
-                        <div class="form-group"><label for="slippage">Předpokládaný Slippage (v ticích)</label><input type="number" id="slippage" value="1" step="1"></div>
+                        <legend>Náklady</legend>
+                        <div class="form-group"><label for="platform">Obchodní platforma</label><select id="platform"><option value="manual">Manuální vstup</option><option value="apex-rithmic">Apex - Rithmic</option><option value="apex-tradovate">Apex - Tradovate</option></select></div>
+                        <div class="form-group"><label for="commission">Komise za kontrakt (RT) ($)</label><input type="number" id="commission" value="0" step="0.01"></div>
+                        <div class="form-group"><label for="slippage">Předpokládaný skluz (v ticích)</label><input type="number" id="slippage" value="1" step="1"></div>
                     </fieldset>
                 </form>
             </div>
             <div class="card">
-                <h2 style="text-align: center; color: var(--primary-color); margin-top:0;">Výsledky</h2>
+                <h2 style="text-align: center; color: var(--text-color); margin-top:0; font-weight: 600;">Výsledky</h2>
                 <div class="results-grid">
-                    <div class="result-item" style="grid-column: 1 / -1;"><div class="result-label">Maximální Počet Kontraktů</div><div id="max-contracts" class="result-value">_</div></div>
+                    <div class="result-item" style="grid-column: 1 / -1;"><div class="result-label">Maximální počet kontraktů</div><div id="max-contracts" class="result-value">_</div></div>
                     <div class="result-item"><div class="result-label">RRR (TP1)</div><div id="rrr-tp1" class="result-value-small">_</div></div>
                     <div class="result-item"><div class="result-label">RRR (TP2)</div><div id="rrr-tp2" class="result-value-small">_</div></div>
-                    <div class="result-item" style="grid-column: 1 / -1;"><div class="result-label">Vizuální Poměr Rizika a Zisku (TP1)</div><div class="rrr-bar"><div id="rrr-bar-risk" class="rrr-risk"></div><div id="rrr-bar-reward" class="rrr-reward"></div></div><div id="warning-text"></div></div>
-                    <div class="result-item"><div class="result-label">Celkové Kalkulované Riziko</div><div id="total-calculated-risk" class="result-value-small">_</div></div>
-                    <div class="result-item"><div class="result-label">Riziko na 1 Kontrakt (TERPC)</div><div id="terpc" class="result-value-small">_</div></div>
+                    <div class="result-item" style="grid-column: 1 / -1;"><div class="result-label">Poměr Rizika a Zisku (TP1)</div><div class="rrr-bar"><div id="rrr-bar-risk" class="rrr-risk"></div><div id="rrr-bar-reward" class="rrr-reward"></div></div><div id="warning-text"></div></div>
+                    <div class="result-item"><div class="result-label">Celkové kalkulované riziko</div><div id="total-calculated-risk" class="result-value-small">_</div></div>
+                    <div class="result-item"><div class="result-label">Riziko na 1 kontrakt (TERPC)</div><div id="terpc" class="result-value-small">_</div></div>
                 </div>
             </div>
 
             <div class="bottom-section">
                 <div class="widget-card">
-                    <h3>Technická Analýza (S&P 500)</h3>
-                    <div class="tradingview-widget-container">
-                        <div class="tradingview-widget-container__widget"></div>
-                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    <h3>Index Volatility (VIX)</h3>
+                    <div class="tradingview-widget-container" style="height: 100%;">
+                        <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
                         {
-                        "interval": "1H",
-                        "width": "100%",
-                        "isTransparent": true,
-                        "height": "100%",
-                        "symbol": "CME_MINI:ES1!",
-                        "showIntervalTabs": true,
-                        "locale": "cs",
-                        "colorTheme": "dark"
+                          "symbol": "TVC:VIX",
+                          "width": "100%",
+                          "height": "100%",
+                          "locale": "cs",
+                          "dateRange": "12M",
+                          "colorTheme": "dark",
+                          "isTransparent": true,
+                          "autosize": true,
+                          "largeChartUrl": ""
                         }
                         </script>
                     </div>
@@ -293,7 +348,6 @@
     </div>
 
     <script>
-        // --- ZÁKLADNÍ NASTAVENÍ A VÝPOČTY (beze změny) ---
         const instrumentData = {
             'ES':  { pointValue: 50.0, tickSize: 0.25 }, 'MES': { pointValue: 5.0,  tickSize: 0.25 },
             'NQ':  { pointValue: 20.0, tickSize: 0.25 }, 'MNQ': { pointValue: 2.0,  tickSize: 0.25 },
@@ -395,10 +449,10 @@
             outputs.rrrBarReward.style.width = '50%';
         }
         function saveToLocalStorage(values) {
-            localStorage.setItem('futuresCalculatorSettings_v11', JSON.stringify(values));
+            localStorage.setItem('futuresCalculatorSettings_v12', JSON.stringify(values));
         }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('futuresCalculatorSettings_v11');
+            const saved = localStorage.getItem('futuresCalculatorSettings_v12');
             if (saved) {
                 try {
                     const settings = JSON.parse(saved);
@@ -409,13 +463,12 @@
             }
             updateCommission();
         }
-        form.addEventListener('input', calculateAndDisplay);
-
-        // --- ZOBRAZENÍ SVÁTKŮ (beze změny) ---
+        
         const bankHolidays = [
             { name: "New Year's Day", date: "2025-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2025-01-20" }, { name: "Washington's Birthday", date: "2025-02-17" }, { name: "Memorial Day", date: "2025-05-26" }, { name: "Juneteenth", date: "2025-06-19" }, { name: "Independence Day", date: "2025-07-04" }, { name: "Labor Day", date: "2025-09-01" }, { name: "Columbus Day", date: "2025-10-13" }, { name: "Veterans Day", date: "2025-11-11" }, { name: "Thanksgiving Day", date: "2025-11-27" }, { name: "Christmas Day", date: "2025-12-25" },
             { name: "New Year's Day", date: "2026-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2026-01-19" }, { name: "Washington's Birthday", date: "2026-02-16" }, { name: "Memorial Day", date: "2026-05-25" }, { name: "Juneteenth", date: "2026-06-19" }, { name: "Independence Day (Observed)", date: "2026-07-03" }, { name: "Labor Day", date: "2026-09-07" }, { name: "Columbus Day", date: "2026-10-12" }, { name: "Veterans Day", date: "2026-11-11" }, { name: "Thanksgiving Day", date: "2026-11-26" }, { name: "Christmas Day", date: "2026-12-25" },
         ];
+        
         function displayUpcomingHolidays() {
             const widget = document.getElementById('holiday-widget');
             const today = new Date();
@@ -433,7 +486,8 @@
             }).join('');
         }
 
-        // --- SPOUŠTĚNÍ PO NAČTENÍ STRÁNKY ---
+        form.addEventListener('input', calculateAndDisplay);
+
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             displayUpcomingHolidays();
