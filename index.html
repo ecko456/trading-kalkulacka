@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Dashboard - Finální Verze</title>
+    <title>Trading Dashboard - Responzivní Verze</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -87,12 +87,6 @@
             grid-template-columns: 1fr;
             gap: 25px;
         }
-
-        @media (min-width: 1024px) {
-            .grid-container {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
         
         .card {
             background-color: var(--form-bg-color);
@@ -100,11 +94,6 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 12px var(--shadow-color);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px var(--shadow-color);
         }
         
         fieldset {
@@ -143,12 +132,6 @@
             box-sizing: border-box;
             font-size: 1em;
             font-family: 'Inter', sans-serif;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(62, 133, 247, 0.25);
         }
 
         input:disabled {
@@ -222,12 +205,6 @@
             margin-top: 25px;
             grid-template-columns: 1fr;
         }
-
-        @media (min-width: 1200px) {
-            .bottom-section {
-                 grid-template-columns: 1fr 1fr;
-            }
-        }
         
         .widget-card {
             background-color: var(--form-bg-color);
@@ -279,6 +256,41 @@
         .no-holidays {
             text-align: center;
             padding-top: 20px;
+        }
+
+        /* --- RESPONZIVNÍ DESIGN --- */
+
+        /* Pro tablety a menší desktopy (šířka 768px a více) */
+        @media (min-width: 768px) {
+            .bottom-section {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* Pro velké desktopy (šířka 1024px a více) */
+        @media (min-width: 1024px) {
+            .grid-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Pro velmi malé obrazovky (šířka menší než 600px) */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .card, .widget-card {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            #market-status-bar {
+                font-size: 1em;
+            }
+            #market-status-bar .timer {
+                font-size: 1.1em;
+            }
         }
     </style>
 </head>
@@ -377,7 +389,7 @@
 
     <script>
         // =================================================================================
-        // KALKULAČKA - ZÁKLADNÍ LOGIKA
+        // VEŠKERÝ JAVASCRIPT ZŮSTÁVÁ FUNKČNĚ BEZE ZMĚNY
         // =================================================================================
         const instrumentData = { 'ES': { pointValue: 50.0, tickSize: 0.25 }, 'MES': { pointValue: 5.0, tickSize: 0.25 }, 'NQ': { pointValue: 20.0, tickSize: 0.25 }, 'MNQ': { pointValue: 2.0, tickSize: 0.25 }, 'GC': { pointValue: 100.0, tickSize: 0.10 }, 'MGC': { pointValue: 10.0, tickSize: 0.10 }, 'CL': { pointValue: 1000.0, tickSize: 0.01 }, 'MCL': { pointValue: 100.0, tickSize: 0.01 }, };
         const commissionPresets = { 'apex-rithmic': { 'ES': 5.88, 'NQ': 5.88, 'MES': 1.32, 'MNQ': 1.32, 'GC': 6.14, 'CL': 6.14, 'MGC': 2.44, 'MCL': 2.44 }, 'apex-tradovate': { 'ES': 5.16, 'NQ': 5.16, 'MES': 1.16, 'MNQ': 1.16, 'GC': 5.16, 'CL': 5.16, 'MGC': 2.36, 'MCL': 2.36 } };
@@ -391,29 +403,14 @@
         function resetOutputs() { outputs.maxContracts.textContent = '_'; outputs.terpc.textContent = '_'; outputs.totalCalculatedRisk.textContent = '_'; outputs.rrrTp1.textContent = '_'; outputs.rrrTp1.className = 'result-value-small'; outputs.rrrTp2.textContent = '_'; outputs.rrrTp2.className = 'result-value-small'; outputs.warningText.textContent = ''; outputs.rrrBarRisk.style.width = '50%'; outputs.rrrBarReward.style.width = '50%'; }
         function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v6', JSON.stringify(values)); }
         function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v6'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
-        
-        // =================================================================================
-        // WIDGET PRO SVÁTKY
-        // =================================================================================
         const bankHolidays = [ { name: "New Year's Day", date: "2025-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2025-01-20" }, { name: "Washington's Birthday", date: "2025-02-17" }, { name: "Memorial Day", date: "2025-05-26" }, { name: "Juneteenth", date: "2025-06-19" }, { name: "Independence Day", date: "2025-07-04" }, { name: "Labor Day", date: "2025-09-01" }, { name: "Columbus Day", date: "2025-10-13" }, { name: "Veterans Day", date: "2025-11-11" }, { name: "Thanksgiving Day", date: "2025-11-27" }, { name: "Christmas Day", date: "2025-12-25" }, { name: "New Year's Day", date: "2026-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2026-01-19" }, { name: "Washington's Birthday", date: "2026-02-16" }, { name: "Memorial Day", date: "2026-05-25" }, { name: "Juneteenth", date: "2026-06-19" }, { name: "Independence Day (Observed)", date: "2026-07-03" }, { name: "Labor Day", date: "2026-09-07" }, { name: "Columbus Day", date: "2026-10-12" }, { name: "Veterans Day", date: "2026-11-11" }, { name: "Thanksgiving Day", date: "2026-11-26" }, { name: "Christmas Day", date: "2026-12-25" }, ];
         function displayUpcomingHolidays() { const widget = document.getElementById('holiday-widget'); const today = new Date(); today.setHours(0, 0, 0, 0); const upcoming = bankHolidays.filter(holiday => new Date(holiday.date) >= today).slice(0, 5); if (upcoming.length === 0) { widget.innerHTML = `<div class="no-holidays">Žádné další svátky v databázi.</div>`; return; } widget.innerHTML = upcoming.map(holiday => { const holidayDate = new Date(holiday.date); const correctedDate = new Date(holidayDate.getTime() + holidayDate.getTimezoneOffset() * 60000); const dateString = correctedDate.toLocaleDateString('cs-CZ', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }); return `<div class="holiday-item"><span class="holiday-name">${holiday.name}</span><span class="holiday-date">${dateString}</span></div>`; }).join(''); }
-
-        // =================================================================================
-        // DYNAMICKÝ GRAF VOLATILITY
-        // =================================================================================
         let seasonalityChart = null; 
         async function updateChartWithLiveData() { const canvas = document.getElementById('seasonalityChart'); if (!canvas) return; const ctx = canvas.getContext('2d'); if (seasonalityChart) { seasonalityChart.destroy(); } ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.font = "16px Inter"; ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.textAlign = "center"; ctx.fillText("Načítám aktuální data VIX...", canvas.width / 2, canvas.height / 2); try { const response = await fetch('./vix_data.json'); if (!response.ok) { throw new Error(`Soubor vix_data.json nenalezen (stav: ${response.status})`); } const actualVixData = await response.json(); const processedData = processVixData(actualVixData); drawVixChart(processedData.modelData, processedData.actualData); } catch (error) { console.error("Chyba při načítání aktuálních dat VIX:", error); const processedData = processVixData([]); drawVixChart(processedData.modelData, null); const canvasCtx = canvas.getContext('2d'); canvasCtx.font = "14px Inter"; canvasCtx.fillStyle = "rgba(253, 126, 20, 0.8)"; canvasCtx.textAlign = "center"; canvasCtx.fillText("Aktuální data nejsou k dispozici.", canvas.width / 2, canvas.height / 2 + 30); } }
         function processVixData(liveData) { const fiveYearMonthlyAverages = [22.8, 22.1, 22.5, 19.4, 19.6, 19.9, 18.2, 18.6, 20.9, 21.5, 20.2, 19.5]; const today = new Date(); const modelData = []; const actualData = []; const liveDataMap = new Map(liveData.map(item => [item.date, item.price])); for (let i = -7; i <= 14; i++) { const targetDate = new Date(); targetDate.setHours(12, 0, 0, 0); targetDate.setDate(today.getDate() + i); const targetDateString = targetDate.toISOString().split('T')[0]; const monthIndex = targetDate.getMonth(); modelData.push({ x: targetDate.getTime(), y: fiveYearMonthlyAverages[monthIndex] }); if (liveDataMap.has(targetDateString)) { actualData.push({ x: targetDate.getTime(), y: liveDataMap.get(targetDateString) }); } } return { modelData, actualData }; }
         function drawVixChart(modelDataset, actualDataset) { const datasets = [{ label: '5letý měsíční průměr', data: modelDataset, borderColor: 'rgba(62, 133, 247, 0.6)', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [5, 5], }]; if (actualDataset && actualDataset.length > 0) { datasets.push({ label: 'Aktuální VIX (realita)', data: actualDataset, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 1)', borderWidth: 2.5, pointRadius: 0, tension: 0.4, fill: 'origin', }); } const todayLinePlugin = { id: 'todayLine', afterDraw: (chart) => { const ctx = chart.ctx; const xAxis = chart.scales.x; const yAxis = chart.scales.y; const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0)); if (todayX >= xAxis.left && todayX <= xAxis.right) { ctx.save(); ctx.beginPath(); ctx.moveTo(todayX, yAxis.top); ctx.lineTo(todayX, yAxis.bottom); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.fillText('Dnes', todayX, yAxis.top + 15); ctx.restore(); } } }; const ctx = document.getElementById('seasonalityChart').getContext('2d'); if (seasonalityChart) { seasonalityChart.destroy(); } seasonalityChart = new Chart(ctx, { type: 'line', data: { datasets: datasets }, plugins: [todayLinePlugin], options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: "'Inter', sans-serif" }} } }, scales: { x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'd. MMM' } }, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a9b1bb' } }, y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#a9b1bb' } } } } }); }
-
-        // =================================================================================
-        // ČASOMÍRA NYSE
-        // =================================================================================
         function updateMarketCountdown() { const statusBar = document.getElementById('market-status-bar'); const statusText = document.getElementById('market-status-text'); const timerText = document.getElementById('countdown-timer'); const timeZone = 'America/New_York'; const now = new Date(); const nyTime = new Date(now.toLocaleString('en-US', { timeZone })); const nyDay = nyTime.getDay(); const openTime = new Date(nyTime.getFullYear(), nyTime.getMonth(), nyTime.getDate(), 9, 30, 0); const closeTime = new Date(nyTime.getFullYear(), nyTime.getMonth(), nyTime.getDate(), 16, 0, 0); if (nyDay === 0 || nyDay === 6) { statusText.textContent = 'NY Trh je zavřený (víkend)'; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } const nyDateString = nyTime.toISOString().split('T')[0]; const isHoliday = bankHolidays.some(holiday => holiday.date === nyDateString); if (isHoliday) { statusText.textContent = `NY Trh je zavřený (svátek)`; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } let diff, hours, minutes, seconds; if (nyTime < openTime) { statusText.textContent = 'NY Seance otevírá za:'; statusBar.className = 'status-pre-market'; diff = openTime - nyTime; } else if (nyTime >= openTime && nyTime < closeTime) { statusText.textContent = 'NY Seance zavírá za:'; statusBar.className = 'status-open'; diff = closeTime - nyTime; } else { statusText.textContent = 'NY Trh je pro dnešek zavřený'; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } hours = Math.floor((diff / (1000 * 60 * 60)) % 24); minutes = Math.floor((diff / 1000 / 60) % 60); seconds = Math.floor((diff / 1000) % 60); timerText.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; }
-
-        // =================================================================================
-        // SPOUŠTĚNÍ A EVENT LISTENERY
-        // =================================================================================
+        
         form.addEventListener('input', (event) => { if (event.target.tagName !== 'SELECT') { calculateAndDisplay(); } });
         inputs.platform.addEventListener('change', updateCommission);
         inputs.instrument.addEventListener('change', updateCommission);
