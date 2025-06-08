@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Dashboard - AuthKit Edice</title>
+    <title>Trading Dashboard - Finální Verze</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -122,7 +122,7 @@
             border-color: #444;
         }
 
-        .grid-container, .bottom-section {
+        .grid-container {
             display: grid;
             gap: 25px;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -131,6 +131,15 @@
         .bottom-section {
             grid-column: 1 / -1;
             margin-top: 25px;
+            display: grid;
+            gap: 25px;
+            grid-template-columns: 1fr;
+        }
+        
+        @media (min-width: 1200px) {
+            .bottom-section {
+                 grid-template-columns: 1fr 1fr;
+            }
         }
         
         .card, .widget-card {
@@ -420,11 +429,11 @@
         const outputs = { maxContracts: document.getElementById('max-contracts'), rrrTp1: document.getElementById('rrr-tp1'), rrrTp2: document.getElementById('rrr-tp2'), rrrBarRisk: document.getElementById('rrr-bar-risk'), rrrBarReward: document.getElementById('rrr-bar-reward'), warningText: document.getElementById('warning-text'), totalCalculatedRisk: document.getElementById('total-calculated-risk'), terpc: document.getElementById('terpc'), };
         function calculateAndDisplay() { const values = {}; for (const key in inputs) { values[key] = (inputs[key].type === 'number') ? parseFloat(inputs[key].value) : inputs[key].value; } saveToLocalStorage(values); resetOutputs(); if (isNaN(values.entryPrice) || isNaN(values.stopLossPrice) || values.entryPrice <= 0 || values.stopLossPrice <= 0 || values.totalRisk <= 0) { return; } const instrumentInfo = instrumentData[values.instrument]; const tickValue = instrumentInfo.pointValue * instrumentInfo.tickSize; const riskPoints = Math.abs(values.entryPrice - values.stopLossPrice); const crpcRaw = (riskPoints / instrumentInfo.tickSize) * tickValue; const commissionValue = isNaN(values.commission) ? 0 : values.commission; const slippageCost = values.slippage * tickValue; const terpc = crpcRaw + commissionValue + slippageCost; const maxContracts = (terpc > 0) ? Math.floor(values.totalRisk / terpc) : 0; const totalCalculatedRisk = maxContracts * terpc; outputs.maxContracts.textContent = maxContracts; outputs.terpc.textContent = `$${terpc.toFixed(2)}`; outputs.totalCalculatedRisk.textContent = `$${totalCalculatedRisk.toFixed(2)}`; if (isNaN(values.tp1Price) || values.tp1Price <= 0) { return; } const totalRiskDistance = riskPoints; const rewardDistance1 = Math.abs(values.tp1Price - values.entryPrice); const rrr1 = totalRiskDistance > 0 ? rewardDistance1 / totalRiskDistance : 0; let rrr2 = 0; if (!isNaN(values.tp2Price) && values.tp2Price > 0) { const rewardDistance2 = Math.abs(values.tp2Price - values.entryPrice); rrr2 = totalRiskDistance > 0 ? rewardDistance2 / totalRiskDistance : 0; } updateRrrUI(rrr1, rrr2); }
         function updateRrrUI(rrr1, rrr2) { updateRrrDisplay(outputs.rrrTp1, rrr1); updateRrrDisplay(outputs.rrrTp2, rrr2, true); const totalRatio = 1 + rrr1; const riskPercent = totalRatio > 0 ? (1 / totalRatio) * 100 : 50; outputs.rrrBarRisk.style.width = `${riskPercent}%`; outputs.rrrBarReward.style.width = `${100 - riskPercent}%`; outputs.warningText.textContent = (rrr1 < 1 && rrr1 > 0) ? 'UPOZORNĚNÍ: Potenciální zisk je nižší než riziko!' : ''; }
-        function updateRrrDisplay(element, rrr, isOptional = false) { if (isOptional && rrr <= 0) { element.innerHTML = '_'; element.className = 'result-value-small'; return; } element.innerHTML = `<span class="rrr-indicator">${rrr.toFixed(2)} : 1</span>`; const indicator = element.querySelector('.rrr-indicator'); const rrrVal = parseFloat(rrr); if (rrrVal >= 2) { indicator.style.backgroundColor = 'var(--success-color)'; indicator.style.color = 'white'; } else if (rrrVal >= 1) { indicator.style.backgroundColor = 'var(--warning-color)'; indicator.style.color = 'white'; } else { indicator.style.backgroundColor = 'var(--danger-color)'; indicator.style.color = 'white';} const currentTheme = document.body.getAttribute('data-theme'); if (currentTheme === 'dark' && rrrVal >=2 ) { indicator.style.color = '#000'; } else if (currentTheme === 'light' && rrrVal < 2) { indicator.style.color = 'white'; } else if (currentTheme === 'light' && rrrVal >=2 ) { indicator.style.color = 'white';} else { indicator.style.color = '#000';}}
+        function updateRrrDisplay(element, rrr, isOptional = false) { if (isOptional && rrr <= 0) { element.innerHTML = '_'; element.className = 'result-value-small'; return; } element.innerHTML = `<span class="rrr-indicator">${rrr.toFixed(2)} : 1</span>`; const indicator = element.querySelector('.rrr-indicator'); const rrrVal = parseFloat(rrr); const currentTheme = document.body.getAttribute('data-theme'); if (rrrVal >= 2) { indicator.style.backgroundColor = 'var(--success-color)'; indicator.style.color = 'white'; } else if (rrrVal >= 1) { indicator.style.backgroundColor = 'var(--warning-color)'; indicator.style.color = 'white'; } else { indicator.style.backgroundColor = 'var(--danger-color)'; indicator.style.color = 'white'; } if (currentTheme === 'dark' && rrrVal >= 2) { indicator.style.color = '#000'; } else if (currentTheme === 'dark' && rrrVal < 2) { indicator.style.color = 'white'; } else { indicator.style.color = 'white'; } }
         function updateCommission() { const platform = inputs.platform.value; const instrument = inputs.instrument.value; inputs.commission.disabled = (platform !== 'manual'); if (platform !== 'manual') { inputs.commission.value = commissionPresets[platform]?.[instrument] || 0; } calculateAndDisplay(); }
         function resetOutputs() { outputs.maxContracts.textContent = '_'; outputs.terpc.textContent = '_'; outputs.totalCalculatedRisk.textContent = '_'; outputs.rrrTp1.innerHTML = '_'; outputs.rrrTp1.className = 'result-value-small'; outputs.rrrTp2.innerHTML = '_'; outputs.rrrTp2.className = 'result-value-small'; outputs.warningText.textContent = ''; outputs.rrrBarRisk.style.width = '50%'; outputs.rrrBarReward.style.width = '50%'; }
-        function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v8', JSON.stringify(values)); }
-        function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v8'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
+        function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v9', JSON.stringify(values)); }
+        function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v9'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
         const bankHolidays = [ { name: "New Year's Day", date: "2025-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2025-01-20" }, { name: "Washington's Birthday", date: "2025-02-17" }, { name: "Memorial Day", date: "2025-05-26" }, { name: "Juneteenth", date: "2025-06-19" }, { name: "Independence Day", date: "2025-07-04" }, { name: "Labor Day", date: "2025-09-01" }, { name: "Columbus Day", date: "2025-10-13" }, { name: "Veterans Day", date: "2025-11-11" }, { name: "Thanksgiving Day", date: "2025-11-27" }, { name: "Christmas Day", date: "2025-12-25" }, { name: "New Year's Day", date: "2026-01-01" }, { name: "Martin Luther King, Jr. Day", date: "2026-01-19" }, { name: "Washington's Birthday", date: "2026-02-16" }, { name: "Memorial Day", date: "2026-05-25" }, { name: "Juneteenth", date: "2026-06-19" }, { name: "Independence Day (Observed)", date: "2026-07-03" }, { name: "Labor Day", date: "2026-09-07" }, { name: "Columbus Day", date: "2026-10-12" }, { name: "Veterans Day", date: "2026-11-11" }, { name: "Thanksgiving Day", date: "2026-11-26" }, { name: "Christmas Day", date: "2026-12-25" }, ];
         function displayUpcomingHolidays() { const widget = document.getElementById('holiday-widget'); const today = new Date(); today.setHours(0, 0, 0, 0); const upcoming = bankHolidays.filter(holiday => new Date(holiday.date) >= today).slice(0, 5); if (upcoming.length === 0) { widget.innerHTML = `<div class="no-holidays">Žádné další svátky v databázi.</div>`; return; } widget.innerHTML = upcoming.map(holiday => { const holidayDate = new Date(holiday.date); const correctedDate = new Date(holidayDate.getTime() + holidayDate.getTimezoneOffset() * 60000); const dateString = correctedDate.toLocaleDateString('cs-CZ', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }); return `<div class="holiday-item"><span class="holiday-name">${holiday.name}</span><span class="holiday-date">${dateString}</span></div>`; }).join(''); }
         let seasonalityChart = null; 
@@ -436,10 +445,62 @@
         const themeToggle = document.getElementById('theme-toggle');
         const sunIcon = document.getElementById('theme-icon-sun');
         const moonIcon = document.getElementById('theme-icon-moon');
-        function setTheme(theme) { document.body.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); if (theme === 'light') { sunIcon.style.display = 'block'; moonIcon.style.display = 'none'; } else { sunIcon.style.display = 'none'; moonIcon.style.display = 'block'; } if (seasonalityChart) { seasonalityChart.options.plugins.legend.labels.color = theme === 'light' ? '#525252' : '#a3a3a3'; seasonalityChart.options.scales.x.ticks.color = theme === 'light' ? '#525252' : '#a3a3a3'; seasonalityChart.options.scales.y.ticks.color = theme === 'light' ? '#525252' : '#a3a3a3'; seasonalityChart.options.scales.y.grid.color = theme === 'light' ? '#e5e5e5' : '#262626'; seasonalityChart.update(); } }
+        function setTheme(theme) { 
+            document.body.setAttribute('data-theme', theme); 
+            localStorage.setItem('theme', theme); 
+            if (theme === 'light') { 
+                sunIcon.style.display = 'block'; 
+                moonIcon.style.display = 'none'; 
+            } else { 
+                sunIcon.style.display = 'none'; 
+                moonIcon.style.display = 'block'; 
+            } 
+            // Aktualizace barev grafu po změně tématu
+            if (seasonalityChart) { 
+                const isLight = theme === 'light';
+                seasonalityChart.options.plugins.legend.labels.color = isLight ? '#525252' : '#a3a3a3';
+                seasonalityChart.options.scales.x.ticks.color = isLight ? '#525252' : '#a3a3a3';
+                seasonalityChart.options.scales.y.ticks.color = isLight ? '#525252' : '#a3a3a3';
+                seasonalityChart.options.scales.y.grid.color = isLight ? '#e5e5e5' : '#262626';
+                seasonalityChart.options.scales.x.grid.color = 'transparent'; // Osa X bez mřížky pro čistotu
+                // Změna barvy todayLine pluginu
+                const todayLine = seasonalityChart.config.plugins.find(p => p.id === 'todayLine');
+                if(todayLine) {
+                  todayLine.afterDraw = (chart) => {
+                      const ctx = chart.ctx;
+                      const xAxis = chart.scales.x;
+                      const yAxis = chart.scales.y;
+                      const todayX = xAxis.getPixelForValue(new Date().setHours(12,0,0,0));
+                      if (todayX >= xAxis.left && todayX <= xAxis.right) {
+                          ctx.save();
+                          ctx.beginPath();
+                          ctx.moveTo(todayX, yAxis.top);
+                          ctx.lineTo(todayX, yAxis.bottom);
+                          ctx.lineWidth = 2;
+                          ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.5)';
+                          ctx.setLineDash([5, 5]);
+                          ctx.stroke();
+                          ctx.textAlign = 'center';
+                          ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.8)';
+                          ctx.fillText('Dnes', todayX, yAxis.top + 15);
+                          ctx.restore();
+                      }
+                  };
+                }
+                seasonalityChart.update(); 
+            } 
+        }
         themeToggle.addEventListener('click', () => { const currentTheme = document.body.getAttribute('data-theme'); const newTheme = currentTheme === 'dark' ? 'light' : 'dark'; setTheme(newTheme); });
         
-        document.addEventListener('DOMContentLoaded', () => { loadFromLocalStorage(); displayUpcomingHolidays(); updateChartWithLiveData(); updateMarketCountdown(); setInterval(updateMarketCountdown, 1000); const savedTheme = localStorage.getItem('theme') || 'dark'; setTheme(savedTheme); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            loadFromLocalStorage(); 
+            displayUpcomingHolidays(); 
+            updateChartWithLiveData(); 
+            updateMarketCountdown(); 
+            setInterval(updateMarketCountdown, 1000); 
+            const savedTheme = localStorage.getItem('theme') || 'dark'; 
+            setTheme(savedTheme); 
+        });
         
         form.addEventListener('input', (event) => { if (event.target.tagName !== 'SELECT') { calculateAndDisplay(); } });
         inputs.platform.addEventListener('change', updateCommission);
