@@ -122,7 +122,7 @@
             border-color: #444;
         }
 
-        .grid-container, .bottom-section {
+        .grid-container {
             display: grid;
             gap: 25px;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -131,6 +131,15 @@
         .bottom-section {
             grid-column: 1 / -1;
             margin-top: 25px;
+            display: grid;
+            gap: 25px;
+            grid-template-columns: 1fr;
+        }
+        
+        @media (min-width: 1200px) {
+            .bottom-section {
+                 grid-template-columns: 1fr 1fr;
+            }
         }
         
         .card, .widget-card {
@@ -369,11 +378,49 @@
         const themeToggle = document.getElementById('theme-toggle');
         const sunIcon = document.getElementById('theme-icon-sun');
         const moonIcon = document.getElementById('theme-icon-moon');
-        function setTheme(theme) { document.body.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); if (theme === 'light') { sunIcon.style.display = 'block'; moonIcon.style.display = 'none'; } else { sunIcon.style.display = 'none'; moonIcon.style.display = 'block'; } loadTradingViewWidgets(theme); if (seasonalityChart) { const isLight = theme === 'light'; seasonalityChart.options.plugins.legend.labels.color = isLight ? '#525252' : '#a3a3a3'; seasonalityChart.options.scales.x.ticks.color = isLight ? '#525252' : '#a3a3a3'; seasonalityChart.options.scales.y.ticks.color = isLight ? '#525252' : '#a3a3a3'; seasonalityChart.options.scales.y.grid.color = isLight ? '#e5e5e5' : '#262626'; seasonalityChart.options.scales.x.grid.color = 'transparent'; seasonalityChart.update(); } }
-        function loadTradingViewWidgets(themeToLoad) { const calendarContainer = document.querySelector('#economic-calendar-widget .tradingview-widget-container'); if (calendarContainer) { calendarContainer.innerHTML = ''; const calendarScript = document.createElement('script'); calendarScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'; calendarScript.async = true; calendarScript.innerHTML = JSON.stringify({ "colorTheme": themeToLoad, "isTransparent": true, "width": "100%", "height": "100%", "locale": "cs_CZ", "importanceFilter": "1", "currencyFilter": "USD" }); calendarContainer.appendChild(calendarScript); } const newsContainer = document.querySelector('#market-news-widget .tradingview-widget-container'); }
+        function setTheme(theme) { 
+            document.body.setAttribute('data-theme', theme); 
+            localStorage.setItem('theme', theme); 
+            if (theme === 'light') { 
+                sunIcon.style.display = 'block'; 
+                moonIcon.style.display = 'none'; 
+            } else { 
+                sunIcon.style.display = 'none'; 
+                moonIcon.style.display = 'block'; 
+            } 
+            loadTradingViewWidgets(theme);
+            if (seasonalityChart) { 
+                const isLight = theme === 'light';
+                seasonalityChart.options.plugins.legend.labels.color = isLight ? '#525252' : '#a3a3a3';
+                seasonalityChart.options.scales.x.ticks.color = isLight ? '#525252' : '#a3a3a3';
+                seasonalityChart.options.scales.y.ticks.color = isLight ? '#525252' : '#a3a3a3';
+                seasonalityChart.options.scales.y.grid.color = isLight ? '#e5e5e5' : '#262626';
+                seasonalityChart.options.scales.x.grid.color = 'transparent';
+                seasonalityChart.update(); 
+            } 
+        }
+        function loadTradingViewWidgets(themeToLoad) {
+            const calendarContainer = document.querySelector('#economic-calendar-widget .tradingview-widget-container');
+            if (calendarContainer) {
+                calendarContainer.innerHTML = '';
+                const calendarScript = document.createElement('script');
+                calendarScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+                calendarScript.async = true;
+                calendarScript.innerHTML = JSON.stringify({ "colorTheme": themeToLoad, "isTransparent": true, "width": "100%", "height": "100%", "locale": "cs_CZ", "importanceFilter": "1", "currencyFilter": "USD" });
+                calendarContainer.appendChild(calendarScript);
+            }
+        }
         themeToggle.addEventListener('click', () => { const currentTheme = document.body.getAttribute('data-theme'); const newTheme = currentTheme === 'dark' ? 'light' : 'dark'; setTheme(newTheme); });
         
-        document.addEventListener('DOMContentLoaded', () => { loadFromLocalStorage(); displayUpcomingHolidays(); updateChartWithLiveData(); updateMarketCountdown(); setInterval(updateMarketCountdown, 1000); const savedTheme = localStorage.getItem('theme') || 'dark'; setTheme(savedTheme); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            loadFromLocalStorage(); 
+            displayUpcomingHolidays(); 
+            updateChartWithLiveData(); 
+            updateMarketCountdown(); 
+            setInterval(updateMarketCountdown, 1000); 
+            const savedTheme = localStorage.getItem('theme') || 'dark'; 
+            setTheme(savedTheme); 
+        });
         
         form.addEventListener('input', (event) => { if (event.target.tagName !== 'SELECT') { calculateAndDisplay(); } });
         inputs.platform.addEventListener('change', updateCommission);
