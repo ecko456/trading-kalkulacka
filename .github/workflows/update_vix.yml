@@ -1,4 +1,4 @@
-name: Daily VIX Data Scraper
+name: Daily Data Fetcher
 
 on:
   workflow_dispatch:
@@ -24,14 +24,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance
+          pip install yfinance requests
 
       - name: Run the data fetcher
+        # ZDE JE ZMĚNA: Předáváme API klíč ze Secrets do skriptu
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
         run: python scraper.py
       
       - name: Commit and push if data changed
         run: |
-          git config --global user.name "VIX Data Bot"
+          git config --global user.name "Data Bot"
           git config --global user.email "bot@github.com"
-          git add vix_data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update VIX data for $(date -u +'%Y-%m-%d')" && git push)
+          # ZMĚNA: Přidáme oba soubory
+          git add vix_data.json news_data.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update market data for $(date -u +'%Y-%m-%d')" && git push)
