@@ -146,15 +146,10 @@
             padding: 30px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px -5px var(--shadow-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
             transition: all 0.2s ease-in-out;
             display: flex;
             flex-direction: column;
-        }
-
-        .card:hover, .widget-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px -5px var(--shadow-color);
         }
         
         .widget-card {
@@ -211,15 +206,16 @@
         .widget-card h3 { text-align:center; color: var(--text-secondary-color); margin-top:0; margin-bottom: 20px; font-weight: 500; }
         .tradingview-widget-container, .tradingview-widget-container__widget { height: 100% !important; flex-grow: 1; }
         
-        #holiday-widget, #custom-news-feed {
-            flex-grow: 1;
-            overflow-y: auto;
-        }
+        #holiday-widget { flex-grow: 1; overflow-y: auto; }
         .holiday-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--input-bg-color); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid var(--primary-color); }
         .holiday-name { font-weight: 500; margin-right: 15px; }
         .holiday-date { color: var(--text-secondary-color); white-space: nowrap; font-size: 0.9em; }
         .no-holidays { text-align: center; padding-top: 20px; }
 
+        #custom-news-feed {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
         .news-item {
             display: flex;
             gap: 15px;
@@ -356,10 +352,32 @@
         function updateRrrDisplay(element, rrr, isOptional = false) { if (isOptional && rrr <= 0) { element.innerHTML = '_'; element.className = 'result-value-small'; return; } element.innerHTML = `<span class="rrr-indicator">${rrr.toFixed(2)} : 1</span>`; const indicator = element.querySelector('.rrr-indicator'); const rrrVal = parseFloat(rrr); if (rrrVal >= 2) { indicator.style.backgroundColor = 'var(--success-color)'; } else if (rrrVal >= 1) { indicator.style.backgroundColor = 'var(--warning-color)'; } else { indicator.style.backgroundColor = 'var(--danger-color)'; } const currentTheme = document.body.getAttribute('data-theme'); if (currentTheme === 'dark' && rrrVal >= 2) { indicator.style.color = '#000'; } else { indicator.style.color = 'white'; } }
         function updateCommission() { const platform = inputs.platform.value; const instrument = inputs.instrument.value; inputs.commission.disabled = (platform !== 'manual'); if (platform !== 'manual') { inputs.commission.value = commissionPresets[platform]?.[instrument] || 0; } calculateAndDisplay(); }
         function resetOutputs() { outputs.maxContracts.textContent = '_'; outputs.terpc.textContent = '_'; outputs.totalCalculatedRisk.textContent = '_'; outputs.rrrTp1.innerHTML = '_'; outputs.rrrTp1.className = 'result-value-small'; outputs.rrrTp2.innerHTML = '_'; outputs.rrrTp2.className = 'result-value-small'; outputs.warningText.textContent = ''; outputs.rrrBarRisk.style.width = '50%'; outputs.rrrBarReward.style.width = '50%'; }
-        function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v13', JSON.stringify(values)); }
-        function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v13'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
+        function saveToLocalStorage(values) { localStorage.setItem('futuresCalculator_final_v14', JSON.stringify(values)); }
+        function loadFromLocalStorage() { const saved = localStorage.getItem('futuresCalculator_final_v14'); if (saved) { try { const settings = JSON.parse(saved); Object.keys(settings).forEach(key => { if (inputs[key]) inputs[key].value = settings[key] || ''; }); } catch(e) { console.error('Nepodařilo se načíst uložená nastavení.'); } } updateCommission(); }
         function displayUpcomingHolidays() { const widget = document.getElementById('holiday-widget'); const today = new Date(); today.setHours(0, 0, 0, 0); const upcoming = bankHolidays.filter(holiday => new Date(holiday.date) >= today).slice(0, 5); if (upcoming.length === 0) { widget.innerHTML = `<div class="no-holidays">Žádné další svátky v databázi.</div>`; return; } widget.innerHTML = upcoming.map(holiday => { const holidayDate = new Date(holiday.date); const correctedDate = new Date(holidayDate.getTime() + holidayDate.getTimezoneOffset() * 60000); const dateString = correctedDate.toLocaleDateString('cs-CZ', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }); return `<div class="holiday-item"><span class="holiday-name">${holiday.name}</span><span class="holiday-date">${dateString}</span></div>`; }).join(''); }
-        function updateMarketCountdown() { const statusBar = document.getElementById('market-status-bar'); const statusText = document.getElementById('market-status-text'); const timerText = document.getElementById('countdown-timer'); const timeZone = 'America/New_York'; const now = new Date(); const nyTime = new Date(now.toLocaleString('en-US', { timeZone })); const nyDay = nyTime.getDay(); const openTime = new Date(nyTime.getFullYear(), nyTime.getMonth(), nyTime.getDate(), 9, 30, 0); const closeTime = new Date(nyTime.getFullYear(), nyTime.getMonth(), nyTime.getDate(), 16, 0, 0); if (nyDay === 0 || nyDay === 6) { statusText.textContent = 'NY Trh je zavřený (víkend)'; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } const nyDateString = nyTime.toISOString().split('T')[0]; const isHoliday = bankHolidays.some(holiday => holiday.date === nyDateString); if (isHoliday) { statusText.textContent = `NY Trh je zavřený (svátek)`; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } let diff, hours, minutes, seconds; if (nyTime < openTime) { statusText.textContent = 'NY Seance otevírá za:'; statusBar.className = 'status-pre-market'; diff = openTime - nyTime; } else if (nyTime >= openTime && nyTime < closeTime) { statusText.textContent = 'NY Seance zavírá za:'; statusBar.className = 'status-open'; diff = closeTime - nyTime; } else { statusText.textContent = 'NY Trh je pro dnešek zavřený'; timerText.textContent = ''; statusBar.className = 'status-closed'; return; } hours = Math.floor((diff / (1000 * 60 * 60)) % 24); minutes = Math.floor((diff / 1000 / 60) % 60); seconds = Math.floor((diff / 1000) % 60); timerText.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; }
+        
+        function getNextOpen(nowInNY) {
+            let nextOpen = new Date(nowInNY);
+            nextOpen.setHours(9, 30, 0, 0);
+
+            if (nowInNY.getTime() >= nextOpen.getTime()) {
+                nextOpen.setDate(nextOpen.getDate() + 1);
+            }
+
+            while (true) {
+                const dayOfWeek = nextOpen.getDay();
+                const dateString = nextOpen.toISOString().split('T')[0];
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const isHoliday = bankHolidays.some(h => h.date === dateString);
+
+                if (!isWeekend && !isHoliday) {
+                    return nextOpen;
+                }
+                nextOpen.setDate(nextOpen.getDate() + 1);
+            }
+        }
+
+        function updateMarketCountdown() { const statusBar = document.getElementById('market-status-bar'); const statusText = document.getElementById('market-status-text'); const timerText = document.getElementById('countdown-timer'); const timeZone = 'America/New_York'; const now = new Date(); const nyTime = new Date(now.toLocaleString('en-US', { timeZone })); const nextOpenTime = getNextOpen(nyTime); const todayCloseTime = new Date(nextOpenTime); todayCloseTime.setHours(16, 0, 0, 0); const todayOpenTime = new Date(nextOpenTime); if (nyTime >= todayOpenTime && nyTime < todayCloseTime) { statusText.textContent = 'NY Seance zavírá za:'; statusBar.className = 'status-open'; diff = todayCloseTime - nyTime; } else { statusText.textContent = 'NY Seance otevírá za:'; statusBar.className = 'status-pre-market'; diff = nextOpenTime - nyTime; } let hours = Math.floor((diff / (1000 * 60 * 60))); let minutes = Math.floor((diff / 1000 / 60) % 60); let seconds = Math.floor((diff / 1000) % 60); timerText.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; }
         async function displayCustomNews() { const newsContainer = document.getElementById('custom-news-feed'); if (!newsContainer) return; newsContainer.innerHTML = `<div class="no-holidays">Načítám zprávy...</div>`; try { const response = await fetch('./news_data.json?cache_bust=' + new Date().getTime()); if (!response.ok) throw new Error(`Soubor news_data.json nenalezen`); const newsArticles = await response.json(); newsContainer.innerHTML = ''; if (newsArticles.length === 0) { newsContainer.innerHTML = '<div class="no-holidays">Žádné nové zprávy.</div>'; return; } newsArticles.forEach(article => { const articleHTML = `<a href="${article.url}" target="_blank" rel="noopener noreferrer" class="news-item">${article.image ? `<img src="${article.image}" class="news-item-image" alt="Obrázek ke zprávě" onerror="this.style.display='none'">` : ''}<div class="news-item-content"><div class="news-item-title">${article.title}</div><div class="news-item-meta"><span>${article.source}</span><span>&nbsp;•&nbsp;</span><span>${formatTimeAgo(article.published_utc)}</span></div></div></a>`; newsContainer.innerHTML += articleHTML; }); } catch (error) { console.error("Chyba při načítání zpráv:", error); newsContainer.innerHTML = '<div class="no-holidays" style="color: var(--danger-color);">Chyba načítání zpráv.</div>'; } }
         function formatTimeAgo(utcDateString) { const now = new Date(); const past = new Date(utcDateString); const diffInSeconds = Math.floor((now - past) / 1000); const minutes = Math.floor(diffInSeconds / 60); const hours = Math.floor(minutes / 60); const days = Math.floor(hours / 24); if (days > 1) return `${days} dny zpět`; if (days === 1) return `včera`; if (hours > 1) return `před ${hours} hodinami`; if (hours === 1) return `před 1 hodinou`; if (minutes > 1) return `před ${minutes} minutami`; return `před malou chvílí`; }
         function loadTradingViewWidgets(themeToLoad) { const calendarContainer = document.querySelector('#economic-calendar-widget .tradingview-widget-container'); if (calendarContainer) { calendarContainer.innerHTML = ''; const calendarScript = document.createElement('script'); calendarScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'; calendarScript.async = true; calendarScript.innerHTML = JSON.stringify({ "colorTheme": themeToLoad, "isTransparent": true, "width": "100%", "height": "100%", "locale": "cs_CZ", "importanceFilter": "1", "currencyFilter": "USD" }); calendarContainer.appendChild(calendarScript); } }
@@ -376,8 +394,8 @@
             setTheme(savedTheme); 
             loadFromLocalStorage(); 
             displayUpcomingHolidays(); 
-            await loadAndDrawVixChart(); 
-            await displayCustomNews();
+            loadAndDrawVixChart(); 
+            displayCustomNews();
             updateMarketCountdown(); 
             setInterval(updateMarketCountdown, 1000); 
         }
